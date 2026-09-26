@@ -89,6 +89,7 @@ No full-screen interstitial, no ad, no unnecessary confirmation for the normal s
 - The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. No accessibility service, clipboard listener, boot receiver, wake lock, analytics or network client is present.
 - Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
 - Plan 0001 Step 1 passed the clean CI build/unit/lint gate. Steps 2 onward remain active; inspect current CI and evidence before claiming additional completion.
+- `MediaStoreVideoWriter` is a separately testable blocking storage primitive, not a downloader. It uses pending rows and rollback; real transfers, process-death reconciliation and job deduplication still need implementation/evidence.
 
 ## Repository workflow
 

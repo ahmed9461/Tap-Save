@@ -85,6 +85,18 @@ class OverlayIntegrationTest {
         }
     }
 
+    @Test fun notificationStopActionAlsoTerminatesWorkerThread() {
+        grantSessionPermissions()
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.startForegroundService(Intent(it, OverlayService::class.java)) }
+            waitUntil { notifications.activeNotifications.any { it.id == 1 } }
+            val notification = notifications.activeNotifications.single { it.id == 1 }.notification
+            notification.actions.single().actionIntent.send()
+            waitUntil { notifications.activeNotifications.none { it.id == 1 } }
+            waitUntil { Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
+        }
+    }
+
     private fun waitUntil(condition: () -> Boolean) {
         val deadline = SystemClock.elapsedRealtime() + 10_000
         while (!condition() && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(100)

@@ -58,7 +58,8 @@ The [Android yt-dlp wrapper](https://github.com/yausername/youtubedl-android) do
 - Share receiver handles `ACTION_SEND` / `text/plain`, bounded input, canonical Reel URLs, distinct redirect tokens and usable invalid/ambiguous states. The development screen explicitly says saving is unavailable. No URL/history is written to disk.
 - Overlay grants are independent of Share. A native 56dp window can be dragged; position is saved and clamped on attachment. Tap currently reminds the user to Share. Start/Stop are explicit; no automatic restart.
 - Usage events retain only the current package candidate. No high-frequency render loop or screen-off wakeups are scheduled. Actual CPU/battery, delayed events, split-screen and OEM behavior are unmeasured.
-- There is deliberately no `INTERNET` permission, resolver, transfer scheduler, media writer or fake save progress in this build. These require a proven supported Reel path first.
+- There is deliberately no `INTERNET` permission, resolver, transfer scheduler or fake save progress in this build. Those require a proven supported Reel path first.
+- An isolated MediaStore writer is now available to instrumentation, independent of the absent resolver/job layer. It creates a pending row, copies off the UI thread, closes both streams, verifies size/container metadata, and only then publishes; exceptions/cancellation delete its allocated row. Tests use generated media, including truncated input, simulated connection loss, source-close failure and filename collisions. Process-death reconciliation and job deduplication remain unimplemented.
 
 ## Device acceptance still required
 
@@ -71,4 +72,4 @@ The same run also passed all eight API 35 instrumentation tests: exported share 
 3. Drag to each edge, rotate, stop/restart and confirm saved position remains reachable. Lock/unlock; inspect that sampling stops while locked and resumes without a stale window.
 4. Revoke overlay/usage permissions while attached, deny notifications, force-stop the app and stop from the notification. Confirm no orphan window/service and an understandable recovery route.
 5. Share a real public Reel directly from Instagram, including any `/share/reel/` form. Compare the displayed canonical URL against the actual intended Reel. ADB/test-fixture shares cannot establish this gate.
-6. Resolve/save only permitted public media, verify audio/quality, gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. None of these saving gates has passed yet.
+6. Resolve/save only permitted public media, verify audio/quality, Samsung gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. Synthetic MediaStore evidence cannot satisfy this end-to-end saving gate.

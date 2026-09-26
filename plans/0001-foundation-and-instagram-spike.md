@@ -100,7 +100,7 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
-**Progress:** Native alternatives compared; implementation deferred until Step 5 establishes a supported media source. MediaStore pending writes, cancellation, deduplication and network interruption are not yet implemented or verified.
+**Progress:** Native alternatives compared. An isolated MediaStore pending writer and synthetic video/audio instrumentation exercise publication, cancellation/failure cleanup and filename collisions independently of Instagram; final API 35/36 results pending. Actual transfer lifecycle, process-death recovery, job deduplication and real network interruption remain open pending a supported resolver.
 
 - Save through modern Android storage APIs.
 - Target `Movies/Tap Save/` unless testing shows a better user-visible location.

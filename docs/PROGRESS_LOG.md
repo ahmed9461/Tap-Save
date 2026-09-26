@@ -1,5 +1,12 @@
 # PROGRESS_LOG
 
+## 2026-09-27 — Storage test correction and expanded compatibility gate
+
+- CI `36271302584` passed build, 14 JVM tests and lint on both API 35/36 jobs; each device suite failed only the pending-row visibility assertion. The eight share/window/service tests passed on both.
+- Fixed the test query to explicitly include pending rows, per the MediaStore API contract. This is also required to prove cancellation/failure deletes pending rows rather than merely hiding them from the query.
+- Added API 29 coverage, notification Stop/worker-termination verification and machine-readable test/APK evidence. Full corrected gate pending.
+- Dependency report resolves Kotlin stdlib 2.4.20 and only AndroidX/Kotlin support dependencies; no network/download engine was introduced.
+
 ## 2026-09-26 — API 35 integration gate passed
 
 - CI `36270467176` completed successfully at `db844a4`: build, JVM tests, lint and eight API 35 share/window/service instrumentation tests.

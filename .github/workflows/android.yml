@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [35, 36]
+        api: [29, 35, 36]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -54,6 +54,9 @@ jobs:
           target: google_apis
           disable-animations: true
           script: ./gradlew --no-daemon :app:connectedDebugAndroidTest
+      - name: Summarize verification evidence
+        if: always()
+        run: python3 scripts/summarize_checks.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:

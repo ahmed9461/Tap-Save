@@ -1,7 +1,10 @@
 package io.github.ahmed9461.tapsave
 
+import android.content.ContentResolver
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.ahmed9461.tapsave.storage.MediaStoreVideoWriter
@@ -106,17 +109,24 @@ class MediaStoreIntegrationTest {
         assertArrayEquals(bytes, resolver.openInputStream(second)!!.use { it.readBytes() })
     }
 
-    private fun pendingValue(filename: String): Int? = resolver.query(
-        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-        arrayOf(MediaStore.Video.Media.IS_PENDING, MediaStore.Video.Media.RELATIVE_PATH),
-        "${MediaStore.Video.Media.DISPLAY_NAME} = ?",
-        arrayOf(filename), null,
-    )!!.use { cursor ->
-        if (!cursor.moveToFirst()) null else {
-            assertEquals(MediaStoreVideoWriter.FOLDER, cursor.getString(1))
-            val pending = cursor.getInt(0)
-            assertFalse(cursor.moveToNext())
-            pending
+    @Suppress("DEPRECATION") // API 29 needs the URI flag; API 30+ uses query arguments.
+    private fun pendingValue(filename: String): Int? {
+        val collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val uri = if (Build.VERSION.SDK_INT >= 30) collection else MediaStore.setIncludePending(collection)
+        val query = Bundle().apply {
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.Video.Media.DISPLAY_NAME} = ?")
+            putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf(filename))
+            if (Build.VERSION.SDK_INT >= 30) putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
+        }
+        return resolver.query(
+            uri, arrayOf(MediaStore.Video.Media.IS_PENDING, MediaStore.Video.Media.RELATIVE_PATH), query, null,
+        )!!.use { cursor ->
+            if (!cursor.moveToFirst()) null else {
+                assertEquals(MediaStoreVideoWriter.FOLDER, cursor.getString(1))
+                val pending = cursor.getInt(0)
+                assertFalse(cursor.moveToNext())
+                pending
+            }
         }
     }
 }
