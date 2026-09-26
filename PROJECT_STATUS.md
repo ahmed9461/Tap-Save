@@ -3,7 +3,7 @@
 ## Current state
 
 **Phase:** Foundation / technical validation  
-**Status:** Planning initialized; implementation has not started.  
+**Status:** Step 1 implementation in progress; clean CI build pending.
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 
 ## Confirmed product choices
@@ -29,6 +29,8 @@ These must be validated before locking the architecture:
 - exact overlay behavior on Samsung/other OEMs.
 
 ## Next milestone
+
+Finish the Kotlin/Compose foundation gate. Native API comparison and verified version sources are in `docs/TECHNICAL_SPIKE.md`; build instructions are in `docs/BUILDING.md`. Local Windows toolchain downloads stalled (partial archives are outside the repository); CI will provide the first clean-checkout build evidence. No Android or Instagram runtime validation has passed yet.
 
 Complete the technical spike in the active plan and record evidence for:
 

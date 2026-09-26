@@ -9,6 +9,8 @@ Prove the risky parts of Tap Save before investing in polished UI. The result of
 
 ## Step 1 — Repository and Android foundation
 
+**Progress:** Minimal single-module Compose source, pinned toolchain, checksum-verified wrapper and CI added. Build pending; step remains unfinished. See `docs/TECHNICAL_SPIKE.md` for the comparison made before implementation.
+
 - Inspect all project docs before implementation.
 - Create a minimal Kotlin Android application.
 - Use Jetpack Compose unless a concrete technical blocker is found.
