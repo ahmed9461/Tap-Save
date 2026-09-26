@@ -1,15 +1,12 @@
 package io.github.ahmed9461.tapsave
 
-import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -23,9 +20,6 @@ import io.github.ahmed9461.tapsave.ui.SpikeScreen
 class MainActivity : ComponentActivity() {
     private var canStart by mutableStateOf(false)
     private var message by mutableStateOf<Int?>(null)
-    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        canStart = OverlayService.canStart(this)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,10 +34,7 @@ class MainActivity : ComponentActivity() {
                 Button(onClick = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) }) {
                     Text(stringResource(R.string.usage_permission))
                 }
-                Button(onClick = {
-                    if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    else openNotificationSettings()
-                }) { Text(stringResource(R.string.notification_permission)) }
+                Button(onClick = { openNotificationSettings() }) { Text(stringResource(R.string.notification_permission)) }
                 Button(enabled = canStart, onClick = {
                     try {
                         startForegroundService(Intent(this@MainActivity, OverlayService::class.java))

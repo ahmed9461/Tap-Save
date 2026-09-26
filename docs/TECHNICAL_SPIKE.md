@@ -21,6 +21,7 @@ Native API documentation establishes capabilities/constraints, not Instagram/OEM
 ## Primary references
 
 - [Overlay window type](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_APPLICATION_OVERLAY)
+- [Non-activity window context](https://developer.android.com/reference/android/content/Context#createWindowContext(int,android.os.Bundle))
 - [UsageStatsManager](https://developer.android.com/reference/android/app/usage/UsageStatsManager)
 - [Receiving shares](https://developer.android.com/develop/ui/compose/sharing/receive)
 - [Clipboard restrictions](https://developer.android.com/about/versions/10/privacy/changes#clipboard-data)
@@ -29,6 +30,7 @@ Native API documentation establishes capabilities/constraints, not Instagram/OEM
 - [Transfer task comparison](https://developer.android.com/develop/background-work/background-tasks/data-transfer-options)
 - [User-initiated data transfer jobs](https://developer.android.com/develop/background-work/background-tasks/uidt)
 - [MediaStore ownership and pending writes](https://developer.android.com/training/data-storage/shared/media)
+- [Explicit inclusion of pending media in queries](https://developer.android.com/reference/android/provider/MediaStore#QUERY_ARG_MATCH_PENDING)
 
 ## Toolchain selection
 

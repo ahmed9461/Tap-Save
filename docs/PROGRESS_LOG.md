@@ -1,5 +1,11 @@
 # PROGRESS_LOG
 
+## 2026-09-27 — Non-activity overlay review
+
+- API 29/35/36 passed all 14 JVM and 15 instrumentation tests per job at `bc9572e` in CI `36272477074`, including corrected MediaStore assertions.
+- Critical review found the attachment test supplied an Activity context while the service does not. Use Android's display-bound window context on API 30+ and exercise attachment from a non-activity context; the updated path needs its own final gate.
+- Simplified notification setup to system settings for both first grant and recovery after denial. No additional dependency or background mechanism.
+
 ## 2026-09-27 — Storage test correction and expanded compatibility gate
 
 - CI `36271302584` passed build, 14 JVM tests and lint on both API 35/36 jobs; each device suite failed only the pending-row visibility assertion. The eight share/window/service tests passed on both.

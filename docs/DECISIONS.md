@@ -63,6 +63,7 @@ Durable project decisions are recorded here. Change an existing decision only wh
 **Status:** Experimental; production choice deferred until device evidence
 **Decision:** One native `TYPE_APPLICATION_OVERLAY` window, hosted by a non-sticky `specialUse` foreground session with Stop notification/action. Usage access is optional and isolated; sampling is limited to an unlocked, explicitly started session, at 1.5-second intervals on a worker thread. Screen lock/stop invalidates pending results. No accessibility dependency, boot start or wake lock.
 **Tradeoff:** Usage events can lag and multi-window/OEM behavior is uncertain. The control currently directs the user to Share; it cannot identify a Reel. Notifications must be enabled for this experiment so Stop remains discoverable. Download lifecycle/engine choices stay open.
+**Review refinement:** API 30+ uses a display-bound window context for non-activity overlay resources/metrics. Attachment tests start from a non-activity context. Notification setup opens system settings on all supported APIs, including after a prior denial.
 
 ## D-013 — Validate storage separately from Instagram resolution
 

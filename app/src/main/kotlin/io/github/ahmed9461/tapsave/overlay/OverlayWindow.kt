@@ -3,7 +3,9 @@ package io.github.ahmed9461.tapsave.overlay
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PixelFormat
+import android.hardware.display.DisplayManager
 import android.os.Build
+import android.view.Display
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -15,7 +17,13 @@ import io.github.ahmed9461.tapsave.R
 import kotlin.math.roundToInt
 
 /** One small, non-focusable native window. All calls are on the main thread. */
-class OverlayWindow(private val context: Context, private val onFailure: () -> Unit) {
+class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit) {
+    // A service is not a visual context. Bind resources and WindowManager to the overlay's display.
+    private val context = if (Build.VERSION.SDK_INT >= 30) {
+        val display = baseContext.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
+        baseContext.createDisplayContext(display)
+            .createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null)
+    } else baseContext
     private val manager = context.getSystemService(WindowManager::class.java)
     private val preferences = context.getSharedPreferences("overlay", Context.MODE_PRIVATE)
     private val size = (56 * context.resources.displayMetrics.density).roundToInt()

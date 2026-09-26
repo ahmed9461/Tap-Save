@@ -46,11 +46,11 @@ class OverlayIntegrationTest {
         assertFalse(OverlayService.canStart(context))
     }
 
-    @Test fun nativeWindowAttachDetachIsIdempotent() {
+    @Test fun nativeWindowFromNonActivityContextAttachDetachIsIdempotent() {
         grantSessionPermissions()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                val window = OverlayWindow(activity, onFailure = { throw AssertionError("Window update failed") })
+                val window = OverlayWindow(activity.applicationContext, onFailure = { throw AssertionError("Window update failed") })
                 try {
                     window.show()
                     window.show()
