@@ -1,7 +1,10 @@
 package io.github.ahmed9461.tapsave
 
 import android.content.ContentValues
+import android.content.ContentResolver
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.ahmed9461.tapsave.download.*
@@ -47,7 +50,7 @@ class SavePipelineIntegrationTest {
             assertThrows(CancellationException::class.java) {
                 SavePipeline(context, server.http).save(target, signal) { count, _ -> if (count > 0) signal.cancel() }
             }
-            assertNull(reconcileMedia(context, target))
+            assertNoMediaRows()
         }
     }
 
@@ -56,7 +59,7 @@ class SavePipelineIntegrationTest {
         listOf(HttpFixture.Reply("video/mp4", source.copyOf(500), source.size), HttpFixture.Reply("text/html", source)).forEach { response ->
             fixture(response).use { server ->
                 assertThrows(Exception::class.java) { SavePipeline(context, server.http).save(target, TransferCancellation()) { _, _ -> } }
-                assertNull(reconcileMedia(context, target))
+                assertNoMediaRows()
             }
         }
     }
@@ -97,5 +100,19 @@ class SavePipelineIntegrationTest {
         val complete = MediaStoreVideoWriter(context).write(mediaName(target), bytes.inputStream()).also { allocated += it }
         assertEquals(complete, reconcileMedia(context, target))
         assertNotNull(context.contentResolver.openInputStream(complete)?.use { it.read() })
+    }
+
+    @Suppress("DEPRECATION") // API 29 includes pending rows via the URI flag.
+    private fun assertNoMediaRows() {
+        val collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val uri = if (Build.VERSION.SDK_INT >= 30) collection else MediaStore.setIncludePending(collection)
+        val query = Bundle().apply {
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.Video.Media.DISPLAY_NAME} = ? AND ${MediaStore.Video.Media.RELATIVE_PATH} = ?")
+            putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf(mediaName(target), MediaStoreVideoWriter.FOLDER))
+            if (Build.VERSION.SDK_INT >= 30) putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
+        }
+        context.contentResolver.query(uri, arrayOf(MediaStore.Video.Media._ID), query, null)!!.use {
+            assertEquals("Neither pending nor published rows may remain", 0, it.count)
+        }
     }
 }
