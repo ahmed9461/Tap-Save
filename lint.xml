@@ -1,0 +1,7 @@
+<lint>
+    <!-- AGP 9.4's documented default stays within Kotlin's supported Gradle range.
+         Recheck the compatibility matrix before upgrading; see TECHNICAL_SPIKE.md. -->
+    <issue id="AndroidGradlePluginVersion">
+        <ignore path="gradle/wrapper/gradle-wrapper.properties" />
+    </issue>
+</lint>
