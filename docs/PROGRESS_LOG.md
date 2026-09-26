@@ -1,5 +1,12 @@
 # PROGRESS_LOG
 
+## 2026-09-27 — Final automated foundation/spike gate passed
+
+- Final code `0e3bc84`, CI `36272869682`: clean debug build, strict lint, 14 JVM tests and 15 instrumentation tests on each of API 29/35/36; zero failures, errors or skips. Includes non-activity overlay attachment, notification Stop/worker termination and all six MediaStore transaction tests.
+- Reviewed complete implementation/diff and resolved dependency graph. No downloader/network/scheduler/accessibility dependency was introduced. API 36 debug APK: 29,547,938 bytes; exact artifact/hash recorded in `TECHNICAL_SPIKE.md`.
+- Updated project memory/status/decisions and the existing active plan. Documentation-only follow-up does not change the tested application or build inputs.
+- Step 1 is complete. Plan 0001 and Phase 0 remain open for Samsung/Instagram acceptance, direct target identification, public resolution and durable transfer jobs. Owner's public Reel URL is the next live input; Share and overlay investigation remain independent.
+
 ## 2026-09-27 — Non-activity overlay review
 
 - API 29/35/36 passed all 14 JVM and 15 instrumentation tests per job at `bc9572e` in CI `36272477074`, including corrected MediaStore assertions.

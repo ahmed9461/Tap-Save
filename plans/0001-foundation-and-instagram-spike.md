@@ -24,7 +24,7 @@ Debug build succeeds from a clean checkout.
 
 ## Step 2 — Overlay spike
 
-**Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. Unit/instrumentation validation in progress. Instagram, permission UI, drag/rotation, multi-window and OEM acceptance remain open; do not mark this step complete from emulator window tests.
+**Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. API 29/35/36 lifecycle tests passed, including non-activity window attachment and worker termination. Instagram, permission UI, drag/rotation, multi-window and OEM acceptance remain open; do not mark this step complete from emulator window tests.
 
 Validate:
 
@@ -41,7 +41,7 @@ A minimal floating control can be safely used while Instagram is foregrounded an
 
 ## Step 3 — Share receiver spike
 
-**Progress:** Implemented as the independent reliability baseline alongside the overlay spike. Shared text normalization and invalid/ambiguous/short-link states have JVM coverage; exported activity/recreation tests await emulator results. Actual Instagram Share remains unverified. No download is started by this development build.
+**Progress:** Implemented as the independent reliability baseline alongside the overlay spike. Shared text normalization and invalid/ambiguous/short-link states have JVM coverage; exported activity, real intent intake and recreation tests passed on API 29/35/36. Actual Instagram Share remains unverified. No download is started by this development build.
 
 Implement the most reliable baseline first:
 
@@ -100,7 +100,7 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
-**Progress:** Native alternatives compared. An isolated MediaStore pending writer and synthetic video/audio instrumentation exercise publication, cancellation/failure cleanup and filename collisions independently of Instagram; final API 35/36 results pending. Actual transfer lifecycle, process-death recovery, job deduplication and real network interruption remain open pending a supported resolver.
+**Progress:** Native alternatives compared. An isolated MediaStore pending writer and synthetic video/audio instrumentation passed publication, cancellation/failure cleanup and filename collision checks on API 29/35/36, independently of Instagram. Actual transfer lifecycle, process-death recovery, job deduplication and real network interruption remain open pending a supported resolver.
 
 - Save through modern Android storage APIs.
 - Target `Movies/Tap Save/` unless testing shows a better user-visible location.
@@ -115,7 +115,7 @@ A requested download is robust across ordinary activity lifecycle changes and ap
 
 ## Step 7 — Review
 
-**Progress:** Reviewed diff and lifecycle boundaries; fixed stale activity-stop handling and moved context resets off the UI thread. Final CI evidence and real-device gates remain outstanding. Plan stays active.
+**Progress:** Reviewed diff, dependencies and lifecycle boundaries; fixed stale activity-stop handling, moved context resets off the UI thread, corrected pending-inclusive storage tests and tightened non-activity window coverage. Final code at `0e3bc84` passed build/lint, 14 JVM tests and 15 instrumentation tests on each of API 29/35/36 in CI `36272869682`. Real-device acceptance and resolver/job work remain outstanding. Plan stays active.
 
 Before closing this plan:
 

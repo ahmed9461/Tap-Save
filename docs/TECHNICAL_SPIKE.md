@@ -1,6 +1,6 @@
 # Foundation spike evidence
 
-Plan: `plans/0001-foundation-and-instagram-spike.md`. Observations dated 2026-09-26.
+Plan: `plans/0001-foundation-and-instagram-spike.md`. Observations dated 2026-09-26/27.
 This is an evidence notebook, not a replacement plan. Device acceptance remains open.
 
 ## Compare before committing
@@ -41,7 +41,7 @@ Verified against primary release documentation and live publisher metadata, rath
 - Kotlin/Compose compiler **2.4.20**: [Kotlin release history](https://kotlinlang.org/docs/releases.html), [compatibility matrix](https://kotlinlang.org/docs/gradle-configure-project.html). Use AGP built-in Kotlin, not the legacy Android Kotlin plugin.
 - Compose BOM **2026.09.00**, Activity Compose **1.13.0**: [BOM](https://developer.android.com/develop/ui/compose/bom), [Activity releases](https://developer.android.com/jetpack/androidx/releases/activity), Google Maven stable metadata.
 - SDK compile/target **37** (Android 17); build tools **36.0.0** per AGP default; minimum **29** (Android 10) for scoped MediaStore.
-- Build JVM: maintained Temurin **21 LTS**; app bytecode target **17**. JDK/Gradle archives are checksum-verified before execution.
+- Build JVM: maintained Temurin **21 LTS**; app bytecode target **17**. The checked-in wrapper JAR and Gradle distribution checksum were verified against Gradle's publisher records; CI installs the JDK through the pinned setup action.
 
 Application ID and namespace: `io.github.ahmed9461.tapsave`, based on the repository owner rather than an unowned domain. One `app` module; no DI/navigation/database/network/downloader library at foundation.
 
@@ -61,17 +61,31 @@ The [Android yt-dlp wrapper](https://github.com/yausername/youtubedl-android) do
 - Overlay grants are independent of Share. A native 56dp window can be dragged; position is saved and clamped on attachment. Tap currently reminds the user to Share. Start/Stop are explicit; no automatic restart.
 - Usage events retain only the current package candidate. No high-frequency render loop or screen-off wakeups are scheduled. Actual CPU/battery, delayed events, split-screen and OEM behavior are unmeasured.
 - There is deliberately no `INTERNET` permission, resolver, transfer scheduler or fake save progress in this build. Those require a proven supported Reel path first.
-- An isolated MediaStore writer is now available to instrumentation, independent of the absent resolver/job layer. It creates a pending row, copies off the UI thread, closes both streams, verifies size/container metadata, and only then publishes; exceptions/cancellation delete its allocated row. Tests use generated media, including truncated input, simulated connection loss, source-close failure and filename collisions. Process-death reconciliation and job deduplication remain unimplemented.
+- An isolated MediaStore writer is now available to instrumentation, independent of the absent resolver/job layer. It creates a pending row, copies off the UI thread, closes both streams, verifies size/video metadata, and only then publishes; exceptions/cancellation delete its allocated row. Tests use generated media, including truncated input, simulated connection loss, source-close failure and filename collisions. Cancellation is cooperative between reads; interrupting a blocked network read, process-death reconciliation and job deduplication remain responsibilities of the unimplemented transfer layer.
 
-## Device acceptance still required
+## Automated verification
 
 Foundation milestone: clean-checkout `assembleDebug`, `testDebugUnitTest` and `lintDebug` passed on `db844a4` in [CI run 36270467176](https://github.com/ahmed9461/Tap-Save/actions/runs/36270467176). This is compile/JVM/lint evidence; emulator and device acceptance are separate.
 
-The same run also passed all eight API 35 instrumentation tests: exported share resolution, valid/invalid intent intake, recreation, malformed extras, denied overlay prerequisites, idempotent native-window attachment, session Stop and usage-access revocation. This does not exercise Instagram. The owner's device is a Samsung Galaxy S22 Ultra SM-S908U1 on Android 16; API 36 emulator coverage is being added, with Samsung/Instagram behavior still reserved for live validation.
+The final code gate [CI run 36272869682](https://github.com/ahmed9461/Tap-Save/actions/runs/36272869682) passed at `0e3bc84051cbf28c7203d9cdb4c6140405c19559` on API 29/35/36: build, strict lint, 14 JVM tests and 15 instrumentation tests per job, with zero failures/errors/skips. This includes the non-activity window-context refinement.
+
+- Share: manifest resolution, actual valid/invalid intent intake, activity recreation and malformed extras.
+- Overlay: denied prerequisites, native-window attachment/removal from a non-activity context, explicit session Stop, usage-access revocation and notification Stop with worker termination.
+- Storage: exact synthetic video/audio bytes, pending-to-published transition, cancellation/retry, interrupted/truncated input, non-video rejection, source-close failure and non-overwriting filename collisions.
+- Dependency graph: Kotlin stdlib resolves to 2.4.20. AndroidX/Compose support dependencies remain; no embedded engine, database, HTTP library or scheduler dependency was added. The unminified debug APK is about 28.2 MiB; this is not a release-size measurement.
+
+An earlier storage test queried only non-pending media. Explicit pending inclusion corrected both the visibility assertion and the cleanup oracle, which would otherwise miss leaked incomplete rows. XML counts, APK checksum/size and the runtime dependency graph are retained in each CI artifact. Local Windows tool downloads stalled; build/emulator evidence comes from GitHub Actions, not a local Android SDK.
+
+API 36 artifact: `android-api-36-debug-and-reports`, artifact ID `10916063553`. Its debug APK is 29,547,938 bytes, SHA-256 `6431018b6a54390f8a96bfadad45b7a9547ca2a2e5cd43d76e5956ae9ed8ed73`. Artifacts expire after seven days; source and wrapper remain reproducible inputs. Debug signing varies between CI jobs, so these hashes identify one exact build rather than a release signing identity.
+
+## Device acceptance still required
+
+The owner's device is a Samsung Galaxy S22 Ultra SM-S908U1 on Android 16. The emulator suite does not exercise Instagram or Samsung-specific behavior. Keep these sessions independent: Share needs no optional permissions; the overlay/current-target investigation must not reuse a previous Share target.
 
 1. Record device/API, OEM and Instagram version without account identifiers. Deny each optional permission and confirm Share still launches.
 2. Grant through Settings, start a session, enter/leave Instagram, open its share sheet, Home and Recents; verify hide/show delays. Repeat in split-screen.
 3. Drag to each edge, rotate, stop/restart and confirm saved position remains reachable. Lock/unlock; inspect that sampling stops while locked and resumes without a stale window.
 4. Revoke overlay/usage permissions while attached, deny notifications, force-stop the app and stop from the notification. Confirm no orphan window/service and an understandable recovery route.
 5. Share a real public Reel directly from Instagram, including any `/share/reel/` form. Compare the displayed canonical URL against the actual intended Reel. ADB/test-fixture shares cannot establish this gate.
+   The owner will supply the unauthenticated public URL at this gate. Direct-current-Reel identity is still absent: separately assess what the least invasive APIs expose while switching Reels; do not infer success from an overlay appearing or introduce accessibility without evidence.
 6. Resolve/save only permitted public media, verify audio/quality, Samsung gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. Synthetic MediaStore evidence cannot satisfy this end-to-end saving gate.
