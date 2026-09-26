@@ -1,10 +1,22 @@
 <resources>
     <string name="app_name">Tap Save</string>
-    <string name="foundation_status">Android foundation ready</string>
     <string name="spike_status">Reel saving is not available in this development build yet.</string>
     <string name="link_received">Reel link received</string>
     <string name="short_link_received">Share link received. Resolving short links is not available yet.</string>
     <string name="share_one_reel">Share one Reel at a time.</string>
     <string name="invalid_share">Share an Instagram Reel link to Tap Save.</string>
     <string name="done">Done</string>
+    <string name="overlay_experiment">Optional overlay experiment. Enable overlay, usage access and notifications, then start a session. The control appears in Instagram; tapping it reminds you to share the Reel. Current-Reel detection is not available yet.</string>
+    <string name="overlay_permission">Allow floating control</string>
+    <string name="usage_permission">Allow app context access</string>
+    <string name="notification_permission">Allow session notifications</string>
+    <string name="start_overlay">Start overlay experiment</string>
+    <string name="stop_overlay">Stop overlay</string>
+    <string name="overlay_started">Session requested. Open Instagram to test the control.</string>
+    <string name="overlay_stopped">Overlay stopped</string>
+    <string name="overlay_start_failed">Could not start the overlay. Check permissions and try again.</string>
+    <string name="settings_unavailable">Open Android Settings to manage this permission.</string>
+    <string name="overlay_share_hint">Share a Reel to Tap Save</string>
+    <string name="overlay_channel">Overlay session</string>
+    <string name="overlay_notification">Tap Save overlay experiment is running</string>
 </resources>
