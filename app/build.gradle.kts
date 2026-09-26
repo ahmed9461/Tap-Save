@@ -21,6 +21,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    testOptions {
+        unitTests.all { it.testLogging.events("passed", "failed", "skipped") }
+    }
     lint {
         warningsAsErrors = true
         textReport = true

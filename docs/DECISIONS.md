@@ -63,3 +63,9 @@ Durable project decisions are recorded here. Change an existing decision only wh
 **Status:** Experimental; production choice deferred until device evidence
 **Decision:** One native `TYPE_APPLICATION_OVERLAY` window, hosted by a non-sticky `specialUse` foreground session with Stop notification/action. Usage access is optional and isolated; sampling is limited to an unlocked, explicitly started session, at 1.5-second intervals on a worker thread. Screen lock/stop invalidates pending results. No accessibility dependency, boot start or wake lock.
 **Tradeoff:** Usage events can lag and multi-window/OEM behavior is uncertain. The control currently directs the user to Share; it cannot identify a Reel. Notifications must be enabled for this experiment so Stop remains discoverable. Download lifecycle/engine choices stay open.
+
+## D-013 — Validate storage separately from Instagram resolution
+
+**Status:** Accepted for the storage spike; job integration remains open
+**Decision:** Use MediaStore pending rows in `Movies/Tap Save/` without broad media/storage permissions. A blocking writer runs off the UI thread, verifies copy size when known and video metadata, closes both streams before publication, and deletes its own allocated row on cancellation/failure. No queue/FGS/download engine is selected by this primitive.
+**Evidence boundary:** Generated video/audio fixtures can validate Android storage and cleanup on emulators. They cannot prove Instagram resolution, Samsung gallery UX, full-frame media integrity or process-death recovery. Deduplication belongs to the future job layer using the normalized target key; filename collision safety is separate.

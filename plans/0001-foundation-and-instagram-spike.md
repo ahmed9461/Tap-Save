@@ -9,7 +9,7 @@ Prove the risky parts of Tap Save before investing in polished UI. The result of
 
 ## Step 1 — Repository and Android foundation
 
-**Progress:** Minimal single-module Compose source, pinned toolchain, checksum-verified wrapper and CI added. Build pending; step remains unfinished. See `docs/TECHNICAL_SPIKE.md` for the comparison made before implementation.
+**Status: Complete.** Single-module Compose app, IDs/API baseline, pinned toolchain, checksum-verified wrapper and CI added. Clean-checkout `assembleDebug`, JVM tests and `lintDebug` passed at `db844a4` in CI run `36270467176`. See `docs/TECHNICAL_SPIKE.md` for the comparison and evidence. This completes foundation only; later integration/device gates remain open.
 
 - Inspect all project docs before implementation.
 - Create a minimal Kotlin Android application.
@@ -23,6 +23,8 @@ Prove the risky parts of Tap Save before investing in polished UI. The result of
 Debug build succeeds from a clean checkout.
 
 ## Step 2 — Overlay spike
+
+**Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. Unit/instrumentation validation in progress. Instagram, permission UI, drag/rotation, multi-window and OEM acceptance remain open; do not mark this step complete from emulator window tests.
 
 Validate:
 
@@ -39,6 +41,8 @@ A minimal floating control can be safely used while Instagram is foregrounded an
 
 ## Step 3 — Share receiver spike
 
+**Progress:** Implemented as the independent reliability baseline alongside the overlay spike. Shared text normalization and invalid/ambiguous/short-link states have JVM coverage; exported activity/recreation tests await emulator results. Actual Instagram Share remains unverified. No download is started by this development build.
+
 Implement the most reliable baseline first:
 
 - register Tap Save as a receiver for shared text/URLs;
@@ -50,6 +54,8 @@ Implement the most reliable baseline first:
 Instagram Share → Tap Save reaches a normalized target reliably.
 
 ## Step 4 — Current Reel identification research
+
+**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. No direct one-tap strategy has passed a device experiment; accessibility remains absent.
 
 Test approaches in order from least invasive to most invasive.
 
@@ -70,6 +76,8 @@ Do not lock AccessibilityService into the main architecture merely because it ca
 Choose a primary strategy plus fallback strategy and record the choice in `docs/DECISIONS.md`.
 
 ## Step 5 — Media resolution/download spike
+
+**Progress:** Compared public metadata and an embedded engine without adding dependencies. One anonymous public-Reel page probe had no direct media fields; sample/evidence and next permitted experiment are in `docs/TECHNICAL_SPIKE.md`. Resolution, APK/runtime engine measurements and a real saved Reel remain open.
 
 Compare practical on-device options, including a lightweight direct resolver and, only if justified, an embedded maintained downloader engine.
 
@@ -92,6 +100,8 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
+**Progress:** Native alternatives compared; implementation deferred until Step 5 establishes a supported media source. MediaStore pending writes, cancellation, deduplication and network interruption are not yet implemented or verified.
+
 - Save through modern Android storage APIs.
 - Target `Movies/Tap Save/` unless testing shows a better user-visible location.
 - Ensure incomplete files are not presented as complete.
@@ -104,6 +114,8 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 A requested download is robust across ordinary activity lifecycle changes and appears correctly in local media storage.
 
 ## Step 7 — Review
+
+**Progress:** Reviewed diff and lifecycle boundaries; fixed stale activity-stop handling and moved context resets off the UI thread. Final CI evidence and real-device gates remain outstanding. Plan stays active.
 
 Before closing this plan:
 

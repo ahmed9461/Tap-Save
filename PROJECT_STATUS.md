@@ -2,43 +2,26 @@
 
 ## Current state
 
-**Phase:** Foundation / technical validation  
-**Status:** Step 1 implementation in progress; clean CI build pending.
+**Phase:** Foundation / technical validation
+**Status:** Step 1 foundation complete; share receiver and optional overlay prototype implemented; emulator/device gates in progress.
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
+**Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
-## Confirmed product choices
+## Implemented
 
-- Product name: Tap Save.
-- Android-only.
-- Personal use.
-- Instagram Reels is the first platform.
-- Main UX: floating one-tap save control while browsing.
-- No ads, analytics, login system, or cloud dependency in the initial product.
-- Share-to-Tap-Save is a required fallback.
+- One Kotlin/Compose application module with a pinned, verified stable toolchain and build/test/lint CI.
+- Defensive text share receiver: canonical Reel target, distinct short share link, invalid/ambiguous input recovery. No optional permissions required for Share.
+- Native movable overlay experiment with persisted position, explicit foreground session and Stop controls. Optional usage access supplies approximate app context. No accessibility service.
+- JVM regression tests and API 35 instrumentation tests for the risky entry points/lifecycle; evidence is tracked in `docs/TECHNICAL_SPIKE.md`.
 
-## Not yet decided
+## Verification and limitations
 
-These must be validated before locking the architecture:
-
-- exact minimum Android version;
-- most reliable way to identify the current Reel without creating a fragile dependency on Instagram UI internals;
-- whether any AccessibilityService functionality is necessary at all;
-- final media resolver/downloader implementation;
-- whether an embedded yt-dlp-compatible engine is acceptable for device size, startup cost, and maintenance;
-- foreground-service strategy for downloads on current Android versions;
-- exact overlay behavior on Samsung/other OEMs.
+- Clean-checkout debug build, JVM tests and lint passed at `db844a4` in CI run `36270467176`. Emulator checks and the later foreground regression are still pending.
+- No real-device Instagram/OEM behavior has been verified.
+- This development build does not download media. Current-Reel identity, short-link resolution, a viable public media resolver, transfer progress/cancellation and MediaStore integration remain open.
+- A bounded anonymous public-Reel page probe returned HTTP 200 but no direct video metadata. This is one environmental result, not a general claim about public Reel support.
+- No network permission, embedded downloader, credentials, cloud features or analytics have been added.
 
 ## Next milestone
 
-Finish the Kotlin/Compose foundation gate. Native API comparison and verified version sources are in `docs/TECHNICAL_SPIKE.md`; build instructions are in `docs/BUILDING.md`. Local Windows toolchain downloads stalled (partial archives are outside the repository); CI will provide the first clean-checkout build evidence. No Android or Instagram runtime validation has passed yet.
-
-Complete the technical spike in the active plan and record evidence for:
-
-1. overlay lifecycle;
-2. foreground-app detection;
-3. share receiver;
-4. current Reel identification options;
-5. direct download/resolution options;
-6. media storage and background-download behavior.
-
-Do not begin broad UI polishing before these risks are validated.
+Finish the clean CI/emulator gate, then execute the real-device overlay/share checks in `docs/TECHNICAL_SPIKE.md`. Validate a permitted public Reel before choosing the resolver/download lifecycle. Keep Plan 0001 active; do not start UI polish or a new plan.

@@ -1,5 +1,26 @@
 # PROGRESS_LOG
 
+## 2026-09-26 — API 35 integration gate passed
+
+- CI `36270467176` completed successfully at `db844a4`: build, JVM tests, lint and eight API 35 share/window/service instrumentation tests.
+- Confirmed owner device: Samsung Galaxy S22 Ultra SM-S908U1 on Android 16. Owner will provide a public Reel URL at the live gate and requested continued independent automation; API 36 coverage added.
+- Storage is being tested independently with a generated 0.5-second black/silent MP4 fixture. It cannot establish Reel resolution, network job durability or Samsung gallery acceptance.
+
+## 2026-09-26 — Step 1 foundation gate passed
+
+- CI run `36270467176` passed clean-checkout debug assembly, JVM tests and strict lint at `db844a4`.
+- Marked Plan 0001 Step 1 complete and updated status/memory. Emulator overlay/share tests remain in progress, and real Instagram/OEM acceptance is still unverified.
+- The post-gate review added a regression for late stop events within the same app; that subsequent change still needs the final gate.
+
+## 2026-09-26 — Share and native overlay prototypes
+
+- Added defensive share normalization, distinct short-link handling, permission-independent receiver and honest development states; no media saving is claimed.
+- Added optional native overlay, explicit non-sticky foreground session, Stop controls, persisted/clamped position and usage-event context without accessibility.
+- Reviewed lifecycle races: screen-lock/stop invalidates in-flight results; context resets stay on the worker; late stop events from a previous activity cannot erase a newer activity in the same app.
+- Added JVM regression coverage and API 35 share/window/service instrumentation tests. Clean APK builds succeeded; full current CI/emulator gate remains pending.
+- Recorded one anonymous public-page probe (HTTP 200, no direct media metadata), engine tradeoffs and exact device gates. No resolver/downloader/network permission was added.
+- Updated memory, status, decisions and Plan 0001; phase and plan remain open.
+
 ## 2026-09-26 — Foundation implementation started
 
 - Read required documents in order; inspected clean `main` at `1ab718e`, remote branches and pull refs (none).

@@ -80,12 +80,15 @@ No full-screen interstitial, no ad, no unnecessary confirmation for the normal s
 
 ## Foundation implementation
 
+- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner will supply a public unauthenticated Reel URL at the device-validation gate. Keep explicit Share and direct-current-Reel experiments independent.
+
 - Single `app` module, namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device compatibility still needs verification.
 - Pinned versions and their primary sources are in `docs/TECHNICAL_SPIKE.md`; use the wrapper and `docs/BUILDING.md` commands.
 - `SharedTargetParser` isolates Instagram URL normalization. Direct Reel links are canonicalized and tracking removed. `/share/reel/` tokens are classified separately; they are not Reel IDs. Never treat the last shared target as the Reel currently on screen.
 - Share activity is independent of overlay/usage/notification permissions. It currently displays a target only; it does not download media.
 - The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. No accessibility service, clipboard listener, boot receiver, wake lock, analytics or network client is present.
 - Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
+- Plan 0001 Step 1 passed the clean CI build/unit/lint gate. Steps 2 onward remain active; inspect current CI and evidence before claiming additional completion.
 
 ## Repository workflow
 

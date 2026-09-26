@@ -26,8 +26,8 @@ class UsageForegroundContext(context: Context) {
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
             when (event.eventType) {
-                UsageEvents.Event.ACTIVITY_RESUMED -> state.resumed(event.packageName)
-                UsageEvents.Event.ACTIVITY_PAUSED, UsageEvents.Event.ACTIVITY_STOPPED -> state.paused(event.packageName)
+                UsageEvents.Event.ACTIVITY_RESUMED -> state.resumed(event.packageName, event.className)
+                UsageEvents.Event.ACTIVITY_PAUSED, UsageEvents.Event.ACTIVITY_STOPPED -> state.paused(event.packageName, event.className)
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE, UsageEvents.Event.KEYGUARD_SHOWN -> state.clear()
             }
         }

@@ -62,6 +62,10 @@ The [Android yt-dlp wrapper](https://github.com/yausername/youtubedl-android) do
 
 ## Device acceptance still required
 
+Foundation milestone: clean-checkout `assembleDebug`, `testDebugUnitTest` and `lintDebug` passed on `db844a4` in [CI run 36270467176](https://github.com/ahmed9461/Tap-Save/actions/runs/36270467176). This is compile/JVM/lint evidence; emulator and device acceptance are separate.
+
+The same run also passed all eight API 35 instrumentation tests: exported share resolution, valid/invalid intent intake, recreation, malformed extras, denied overlay prerequisites, idempotent native-window attachment, session Stop and usage-access revocation. This does not exercise Instagram. The owner's device is a Samsung Galaxy S22 Ultra SM-S908U1 on Android 16; API 36 emulator coverage is being added, with Samsung/Instagram behavior still reserved for live validation.
+
 1. Record device/API, OEM and Instagram version without account identifiers. Deny each optional permission and confirm Share still launches.
 2. Grant through Settings, start a session, enter/leave Instagram, open its share sheet, Home and Recents; verify hide/show delays. Repeat in split-screen.
 3. Drag to each edge, rotate, stop/restart and confirm saved position remains reachable. Lock/unlock; inspect that sampling stops while locked and resumes without a stale window.

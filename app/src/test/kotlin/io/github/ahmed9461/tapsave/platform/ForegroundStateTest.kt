@@ -25,4 +25,13 @@ class ForegroundStateTest {
         state.clear()
         assertNull(state.packageName)
     }
+    @Test fun oldActivityStoppingDoesNotHideNewActivityInSameApp() {
+        val state = ForegroundState()
+        state.resumed("com.instagram.android", "FeedActivity")
+        state.resumed("com.instagram.android", "ReelActivity")
+        state.paused("com.instagram.android", "FeedActivity")
+        assertEquals("com.instagram.android", state.packageName)
+        state.paused("com.instagram.android", "ReelActivity")
+        assertNull(state.packageName)
+    }
 }
