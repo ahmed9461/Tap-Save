@@ -3,7 +3,6 @@ package io.github.ahmed9461.tapsave
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -17,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import io.github.ahmed9461.tapsave.overlay.OverlayService
 import io.github.ahmed9461.tapsave.ui.SpikeScreen
 
@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
 
     private fun openSettings(action: String) {
         try {
-            startActivity(Intent(action, Uri.parse("package:$packageName")))
+            startActivity(Intent(action, "package:$packageName".toUri()))
         } catch (_: ActivityNotFoundException) {
             message = R.string.settings_unavailable
         }

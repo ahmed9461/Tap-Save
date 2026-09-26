@@ -23,6 +23,7 @@ import android.view.WindowManager
 import io.github.ahmed9461.tapsave.MainActivity
 import io.github.ahmed9461.tapsave.R
 import io.github.ahmed9461.tapsave.platform.UsageForegroundContext
+import io.github.ahmed9461.tapsave.platform.instagram.InstagramApp
 import java.util.concurrent.atomic.AtomicInteger
 
 class OverlayService : Service() {
@@ -40,7 +41,7 @@ class OverlayService : Service() {
             val current = generation.get()
             val allowed = canStart(this@OverlayService)
             val show = allowed && try {
-                foreground.isInstagramForeground()
+                foreground.currentPackage() == InstagramApp.PACKAGE_NAME
             } catch (_: SecurityException) {
                 false
             }
@@ -104,10 +105,12 @@ class OverlayService : Service() {
         generation.incrementAndGet()
         worker.removeCallbacksAndMessages(null)
         window.hide()
-        foreground.reset()
         if (screenUsable()) {
             polling = true
-            worker.post(poll)
+            worker.post {
+                foreground.reset()
+                poll.run()
+            }
         }
     }
 

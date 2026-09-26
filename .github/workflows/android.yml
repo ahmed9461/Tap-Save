@@ -32,6 +32,8 @@ jobs:
         run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
       - name: Build, unit tests and lint
         run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Record runtime dependency graph
+        run: ./gradlew --no-daemon :app:dependencies --configuration debugRuntimeClasspath > app/build/reports/runtime-dependencies.txt
       - name: Show lint diagnostics
         if: failure()
         run: cat app/build/reports/lint-results-debug.txt

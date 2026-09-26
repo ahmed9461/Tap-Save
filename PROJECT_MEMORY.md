@@ -7,7 +7,7 @@
 **Platform:** Android only.  
 **Usage model:** Personal/private use.  
 **Primary language:** Kotlin.  
-**UI preference:** Native modern Android UI, expected to use Jetpack Compose unless implementation research finds a stronger reason not to.
+**UI:** Jetpack Compose activities; native View for the experimental overlay window.
 
 ## Core idea
 
@@ -77,6 +77,15 @@ The ideal interaction is:
 `browse → tap ↓ → progress → ✓ → continue browsing`
 
 No full-screen interstitial, no ad, no unnecessary confirmation for the normal successful path.
+
+## Foundation implementation
+
+- Single `app` module, namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device compatibility still needs verification.
+- Pinned versions and their primary sources are in `docs/TECHNICAL_SPIKE.md`; use the wrapper and `docs/BUILDING.md` commands.
+- `SharedTargetParser` isolates Instagram URL normalization. Direct Reel links are canonicalized and tracking removed. `/share/reel/` tokens are classified separately; they are not Reel IDs. Never treat the last shared target as the Reel currently on screen.
+- Share activity is independent of overlay/usage/notification permissions. It currently displays a target only; it does not download media.
+- The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. No accessibility service, clipboard listener, boot receiver, wake lock, analytics or network client is present.
+- Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
 
 ## Repository workflow
 

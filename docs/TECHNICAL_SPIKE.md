@@ -42,3 +42,29 @@ Verified against primary release documentation and live publisher metadata, rath
 - Build JVM: maintained Temurin **21 LTS**; app bytecode target **17**. JDK/Gradle archives are checksum-verified before execution.
 
 Application ID and namespace: `io.github.ahmed9461.tapsave`, based on the repository owner rather than an unowned domain. One `app` module; no DI/navigation/database/network/downloader library at foundation.
+
+Test-only dependencies: JUnit 4.13.2 ([publisher](https://junit.org/junit4/)); AndroidX Test runner 1.7.0 and ext JUnit 1.3.0 (stable Google Maven metadata); Compose UI test version managed by the same BOM. They are not release dependencies.
+
+Core KTX 1.19.1 is explicitly declared for URI/preferences helpers already present transitively through Activity. The stable version was checked in Google's `androidx/core/core-ktx/maven-metadata.xml`. Lint keeps warnings fatal; only the wrapper update suggestion is narrowly excluded because Gradle 9.6.0 is the documented compatible choice. Runtime dependency graph is captured in CI artifacts.
+
+## Public media resolution probe
+
+One anonymous, bounded HTTPS GET to the public Reel URL from the [yt-dlp extractor's Reel test](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/instagram.py) returned HTTP 200, 706,607 bytes and a generic Instagram title. No `og:video`, `video_url`, `playable_url` or `video_versions` fields were present. No cookies, credentials, private endpoints or challenge retries were used. The response is not proof of a login restriction, nor proof that all public Reels fail; it is evidence that a basic public-page metadata parser is insufficient for this sample in this environment. Raw page/header data is not committed.
+
+The [Android yt-dlp wrapper](https://github.com/yausername/youtubedl-android) documents a bundled Python/extractor runtime, ABI-specific packaging, process cancellation/progress callbacks, optional FFmpeg and runtime extractor updates. Its sample storage guidance includes legacy pathways. This needs measured APK/startup costs and a constrained no-auth extraction audit before adoption; neither measurement nor device compatibility was established here. No engine was added. Next experiment: an owner-accessible public Reel on the actual device, public page/redirect path only, stopping at authentication/challenge; then evaluate an isolated public-only extractor if necessary. Resolver and download/storage integration remain open.
+
+## Implemented experiment boundaries
+
+- Share receiver handles `ACTION_SEND` / `text/plain`, bounded input, canonical Reel URLs, distinct redirect tokens and usable invalid/ambiguous states. The development screen explicitly says saving is unavailable. No URL/history is written to disk.
+- Overlay grants are independent of Share. A native 56dp window can be dragged; position is saved and clamped on attachment. Tap currently reminds the user to Share. Start/Stop are explicit; no automatic restart.
+- Usage events retain only the current package candidate. No high-frequency render loop or screen-off wakeups are scheduled. Actual CPU/battery, delayed events, split-screen and OEM behavior are unmeasured.
+- There is deliberately no `INTERNET` permission, resolver, transfer scheduler, media writer or fake save progress in this build. These require a proven supported Reel path first.
+
+## Device acceptance still required
+
+1. Record device/API, OEM and Instagram version without account identifiers. Deny each optional permission and confirm Share still launches.
+2. Grant through Settings, start a session, enter/leave Instagram, open its share sheet, Home and Recents; verify hide/show delays. Repeat in split-screen.
+3. Drag to each edge, rotate, stop/restart and confirm saved position remains reachable. Lock/unlock; inspect that sampling stops while locked and resumes without a stale window.
+4. Revoke overlay/usage permissions while attached, deny notifications, force-stop the app and stop from the notification. Confirm no orphan window/service and an understandable recovery route.
+5. Share a real public Reel directly from Instagram, including any `/share/reel/` form. Compare the displayed canonical URL against the actual intended Reel. ADB/test-fixture shares cannot establish this gate.
+6. Resolve/save only permitted public media, verify audio/quality, gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. None of these saving gates has passed yet.

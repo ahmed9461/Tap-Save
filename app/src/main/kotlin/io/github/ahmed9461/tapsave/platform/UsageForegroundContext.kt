@@ -12,7 +12,7 @@ class UsageForegroundContext(context: Context) {
     private val state = ForegroundState()
     private var cursor = System.currentTimeMillis() - 5_000
 
-    @Synchronized fun isInstagramForeground(): Boolean {
+    fun currentPackage(): String? {
         val now = System.currentTimeMillis()
         if (now < cursor) {
             state.clear()
@@ -20,7 +20,7 @@ class UsageForegroundContext(context: Context) {
         }
         val events = manager.queryEvents(cursor, now) ?: run {
             state.clear()
-            return false
+            return null
         }
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
@@ -32,10 +32,10 @@ class UsageForegroundContext(context: Context) {
             }
         }
         cursor = now
-        return state.packageName == "com.instagram.android"
+        return state.packageName
     }
 
-    @Synchronized fun reset() {
+    fun reset() {
         state.clear()
         // Unlock/resume events can precede the broadcast by a few milliseconds.
         cursor = System.currentTimeMillis() - 5_000

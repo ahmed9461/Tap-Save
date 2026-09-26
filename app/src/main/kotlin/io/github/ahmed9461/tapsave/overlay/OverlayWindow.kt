@@ -10,6 +10,7 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
+import androidx.core.content.edit
 import io.github.ahmed9461.tapsave.R
 import kotlin.math.roundToInt
 
@@ -101,7 +102,10 @@ class OverlayWindow(private val context: Context, private val onFailure: () -> U
     }
 
     private fun persistPosition() {
-        preferences.edit().putInt("x", params.x).putInt("y", params.y).apply()
+        preferences.edit {
+            putInt("x", params.x)
+            putInt("y", params.y)
+        }
     }
 
     private fun clampPosition() {
