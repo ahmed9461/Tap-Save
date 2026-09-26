@@ -1,5 +1,12 @@
 # PROGRESS_LOG
 
+## 2026-09-27 — Real public Reel saved through the Android Share pipeline
+
+- Code `03a5d1f`: build/strict lint, 16 JVM + 26 instrumentation tests per API 29/35/36 job passed (CI `36277332969`). Separate live CI `36277332176` saved `DGOSAUyC903` through the real API 36 Share activity/service, verified published video/audio and decoded a frame. No resolver/transport fixture override in that live test.
+- The first live test exposed a missing ServerJS-wrapper parser path. Added bounded JSON-string decoding without executing JavaScript and updated fixtures from the observed public structure. No heavy dependency or authenticated endpoint added.
+- Controlled tests cover progress, blocked-read cancellation, rollback, interrupted input, activity recreation/closure, duplicates and pending-row reconciliation. Reviewed the diff and corrected cleanup assertions to inspect pending-inclusive collections directly.
+- Exported the exact live-tested 0.2 debug APK and verified archive/APK checksums; artifact and size are recorded in `TECHNICAL_SPIKE.md`. Updated memory/status/decisions/Plan 0001. Step 5 development-build exit is met; Samsung save/playback and remaining current-Reel/overlay gates are open. Plan remains active.
+
 ## 2026-09-27 — Owner acceptance and actual Share pipeline implementation
 
 - Owner confirmed Usage Access, overlay visibility in Instagram and reception of `Dc_WBLAuR7M` on Samsung SM-S908U1 / Android 16. Overlay tap only shows the Share hint; no phone download has passed yet.

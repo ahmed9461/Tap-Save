@@ -80,17 +80,18 @@ No full-screen interstitial, no ad, no unnecessary confirmation for the normal s
 
 ## Foundation implementation
 
-- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner confirmed Usage Access, overlay visibility in Instagram and Share URL receipt. Live Share saving is the next gate; keep it independent from current-Reel identification.
+- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner confirmed Usage Access, overlay visibility in Instagram and Share URL receipt. A real public Reel save passed on an API 36 emulator; owner-phone save/playback remains the next gate. Keep it independent from current-Reel identification.
 
 - Single `app` module, namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device compatibility still needs verification.
 - Pinned versions and their primary sources are in `docs/TECHNICAL_SPIKE.md`; use the wrapper and `docs/BUILDING.md` commands.
 - `SharedTargetParser` isolates Instagram URL normalization. Direct Reel links are canonicalized and tracking removed. `/share/reel/` tokens are classified separately; they are not Reel IDs. Never treat the last shared target as the Reel currently on screen.
-- Share activity is independent of overlay/usage/notification permissions. The 0.2 development pipeline adds public resolution, cancellable transfer and MediaStore publication; inspect current verification before claiming device saving.
+- Share activity is independent of overlay/usage/notification permissions. The 0.2 development pipeline performs public resolution, cancellable transfer and MediaStore publication. `DGOSAUyC903` passed the live Android save test at `03a5d1f`; this is emulator evidence, not Samsung acceptance or broad Instagram compatibility.
 - The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. No accessibility service, clipboard listener, boot receiver, wake lock or analytics is present. Networking is limited to explicit Share save requests.
 - Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
-- Plan 0001 Step 1 passed the clean CI build/unit/lint gate. Steps 2 onward remain active; inspect current CI and evidence before claiming additional completion.
+- Plan 0001 Step 1 passed the clean CI build/unit/lint gate; Step 3 URL reception passed owner-device validation. Keep the plan active until its remaining overlay/current-target and save acceptance gates are met.
 - `MediaStoreVideoWriter` uses pending rows and rollback. The Share pipeline adds a single short `dataSync` service, one job checkpoint, exact-target app-owned row reconciliation and deduplication. Build/runtime evidence must distinguish synthetic fixtures, a real public resolver/download and owner-device acceptance.
 - CI covers the minimum API 29 and API 35/36 with real emulator integrations. Pending-row cleanup tests must explicitly include pending items in MediaStore queries; a default query can hide a leaked incomplete row.
+- Public embed metadata can be a `contextJSON` string inside a `requireLazy` / ServerJS wrapper. Decode bounded JSON literals without executing JavaScript. Keep fixtures faithful to observed response structure; standalone JSON fixtures previously missed this integration defect. Public live tests are explicit, separate from deterministic CI, and stop at restrictions.
 
 ## Repository workflow
 

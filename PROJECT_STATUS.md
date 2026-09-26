@@ -3,7 +3,7 @@
 ## Current state
 
 **Phase:** Foundation / technical validation
-**Status:** Owner verified Share reception and overlay visibility. The actual Share save pipeline is implemented and entering its build/runtime gate.
+**Status:** Share resolution/download/MediaStore saving passed the live Android 16 gate. Samsung save/playback acceptance is next; current-Reel identification remains separate.
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
@@ -16,12 +16,12 @@
 
 ## Verification and limitations
 
-- Clean-checkout debug build, strict lint, 14 JVM tests and 15 instrumentation tests per job passed on API 29/35/36 at `0e3bc84` in CI run `36272869682`, including the non-activity window-context refinement. Zero failures/errors/skips.
+- Clean-checkout debug build, strict lint, 16 JVM tests and 26 instrumentation tests per job passed on API 29/35/36 at `03a5d1f` in CI `36277332969`. Zero failures/errors/skips. Tests include actual HTTP transfer, cancellation during blocked reads, pending cleanup, activity recreation/closure, duplicate prevention and recovery reconciliation.
 - Owner confirmed Usage Access, overlay visibility in Instagram and receipt of `Dc_WBLAuR7M` on the S22 Ultra / Android 16. Drag/rotation, hide/show transitions, lock, OEM interruption and actual phone saving remain unverified.
-- New native Share save pipeline: public page/embed metadata, HTTPS transfer, progress/cancellation, pending MediaStore publication, one active job and retry/recovery. New code has not yet passed its CI gate. Direct-current-Reel identity and short-link resolution remain open.
-- Owner's second sample `DGOSAUyC903` resolved anonymously through its public embed; desktop download verified a 4,074,976-byte MP4 with H.264 720×1280 video and AAC audio. This proves the resolver candidate, not Android/phone saving.
+- Native Share save pipeline: public page/embed metadata, HTTPS transfer, progress/cancellation, pending MediaStore publication, one active job and retry/recovery. Direct-current-Reel identity and short-link resolution remain open.
+- Live CI `36277332176` saved `DGOSAUyC903` through the real Share activity/service on API 36, with no resolver/transport override. Published output passed video/audio metadata, nonzero size/duration and frame decode checks; the test then removed its own output. Desktop download independently verified a 4,074,976-byte H.264 720×1280/AAC MP4. Neither establishes Samsung gallery/playback acceptance.
 - Native INTERNET/dataSync permissions added; no embedded engine, credentials, cloud features or analytics.
 
 ## Next milestone
 
-Pass the new deterministic and public-Reel Android gates, then deliver a Share-saving APK for the owner to verify on the S22 Ultra. Continue direct-current-Reel work only after that save path succeeds. Keep Plan 0001 active.
+Verify the supplied 0.2 development APK saves the public Reel on the S22 Ultra, appears under Movies/Tap Save and plays with audio. Then continue the independent direct-current-Reel experiments and remaining overlay acceptance. Keep Plan 0001 active.

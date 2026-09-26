@@ -26,7 +26,7 @@ Debug build succeeds from a clean checkout.
 
 **Owner update:** Usage Access and overlay visibility in Instagram passed on Samsung SM-S908U1 / Android 16. Tap shows the expected Share hint. The other device acceptance items below remain open.
 
-**Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. API 29/35/36 lifecycle tests passed, including non-activity window attachment and worker termination. Instagram, permission UI, drag/rotation, multi-window and OEM acceptance remain open; do not mark this step complete from emulator window tests.
+**Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. API 29/35/36 lifecycle tests passed, including non-activity window attachment and worker termination. Instagram hide/show transitions, drag/rotation, multi-window and OEM interruption acceptance remain open; do not mark this step complete from initial visibility alone.
 
 Validate:
 
@@ -79,7 +79,7 @@ Choose a primary strategy plus fallback strategy and record the choice in `docs/
 
 ## Step 5 — Media resolution/download spike
 
-**Progress:** `DGOSAUyC903` resolves through matching public embed metadata; anonymous desktop download verified a muxed H.264/AAC MP4. Native on-device resolver/transfer implementation and a live Android test are added; Android and owner-device save gates pending. No heavy engine is justified for this sample (D-014).
+**Status: Development-build exit met; owner-phone acceptance pending.** At `03a5d1f`, the real Share activity/service resolved `DGOSAUyC903`, downloaded it anonymously and published a playable video/audio file on API 36 (live CI `36277332176`). The test verified metadata and decoded a frame. Native public-page/embed parsing required support for JSON strings inside ServerJS wrappers; no JavaScript runtime or heavy engine was needed (D-014). This proves one public sample, not broad compatibility. Verify the APK on the S22 Ultra before continuing direct-current-Reel work.
 
 Compare practical on-device options, including a lightweight direct resolver and, only if justified, an embedded maintained downloader engine.
 
@@ -102,7 +102,7 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
-**Progress:** Added one user-started dataSync transfer service, progress/cancellation, activity-independent execution, a single-job checkpoint, app-owned pending cleanup and published-target deduplication. Controlled HTTP, service and recovery tests are added; new results and real-phone gallery acceptance remain pending.
+**Progress:** One user-started dataSync transfer service, progress/cancellation, activity-independent execution, a single-job checkpoint, app-owned pending cleanup and published-target deduplication. API 29/35/36 tests passed exact HTTP-to-MediaStore bytes, interrupted/truncated input, blocked-read cancellation, recreation/closing the Share activity, deduplication and pending-row reconciliation. Live API 36 Reel saving also passed. Samsung gallery/playback, actual force-stop and storage/network pressure acceptance remain open.
 
 - Save through modern Android storage APIs.
 - Target `Movies/Tap Save/` unless testing shows a better user-visible location.
@@ -117,7 +117,7 @@ A requested download is robust across ordinary activity lifecycle changes and ap
 
 ## Step 7 — Review
 
-**Progress:** Reviewed diff, dependencies and lifecycle boundaries; fixed stale activity-stop handling, moved context resets off the UI thread, corrected pending-inclusive storage tests and tightened non-activity window coverage. Final code at `0e3bc84` passed build/lint, 14 JVM tests and 15 instrumentation tests on each of API 29/35/36 in CI `36272869682`. Real-device acceptance and resolver/job work remain outstanding. Plan stays active.
+**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph and failure UX. Final application/test code at `03a5d1f` passed build/lint, 16 JVM tests and 26 instrumentation tests per API 29/35/36 job (CI `36277332969`), plus one separate live public-Reel save test on API 36 (CI `36277332176`). No production dependency added. Real-device save/overlay acceptance, current-Reel strategy, battery measurements and short-link resolution remain outstanding. Plan stays active; no new plan created.
 
 Before closing this plan:
 
