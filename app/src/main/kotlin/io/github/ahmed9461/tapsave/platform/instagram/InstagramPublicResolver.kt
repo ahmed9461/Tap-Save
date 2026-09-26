@@ -57,7 +57,7 @@ object PublicReelMetadata {
                             val video = versions.optJSONObject(i) ?: continue
                             val url = video.optString("url")
                             val area = video.optLong("width", 0) * video.optLong("height", 0)
-                            if (validMedia(url) && (best == null || area > best!!.first)) best = area to url
+                            if (validMedia(url) && (best == null || area > best.first)) best = area to url
                         }
                         val url = best?.second ?: value.optString("video_url")
                         if (validMedia(url)) candidate = ResolvedVideo(url, audio)

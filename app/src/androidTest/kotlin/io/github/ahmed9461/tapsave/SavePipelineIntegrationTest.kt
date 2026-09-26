@@ -96,7 +96,9 @@ class SavePipelineIntegrationTest {
         }
         val pending = context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)!!.also { allocated += it }
         assertNull(reconcileMedia(context, target))
-        context.contentResolver.query(pending, arrayOf(MediaStore.Video.Media._ID), null, null, null)!!.use { assertEquals(0, it.count) }
+        // A deleted item URI can throw SecurityException on modern MediaStore; inspect the collection.
+        assertNoMediaRows()
+        allocated.remove(pending)
         val complete = MediaStoreVideoWriter(context).write(mediaName(target), bytes.inputStream()).also { allocated += it }
         assertEquals(complete, reconcileMedia(context, target))
         assertNotNull(context.contentResolver.openInputStream(complete)?.use { it.read() })
