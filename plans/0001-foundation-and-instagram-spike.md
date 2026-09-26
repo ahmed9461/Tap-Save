@@ -24,6 +24,8 @@ Debug build succeeds from a clean checkout.
 
 ## Step 2 — Overlay spike
 
+**Owner update:** Usage Access and overlay visibility in Instagram passed on Samsung SM-S908U1 / Android 16. Tap shows the expected Share hint. The other device acceptance items below remain open.
+
 **Progress:** Optional native window and non-sticky foreground session implemented with persisted drag position, usage-event context, Stop controls, permission checks and screen-lock cleanup. API 29/35/36 lifecycle tests passed, including non-activity window attachment and worker termination. Instagram, permission UI, drag/rotation, multi-window and OEM acceptance remain open; do not mark this step complete from emulator window tests.
 
 Validate:
@@ -41,7 +43,7 @@ A minimal floating control can be safely used while Instagram is foregrounded an
 
 ## Step 3 — Share receiver spike
 
-**Progress:** Implemented as the independent reliability baseline alongside the overlay spike. Shared text normalization and invalid/ambiguous/short-link states have JVM coverage; exported activity, real intent intake and recreation tests passed on API 29/35/36. Actual Instagram Share remains unverified. No download is started by this development build.
+**Status: Complete for URL reception.** Owner confirmed actual Instagram Share reaches `Dc_WBLAuR7M` on Samsung / Android 16, supplementing API 29/35/36 intake/recreation tests. Actual saving is a separate Step 5/6 gate.
 
 Implement the most reliable baseline first:
 
@@ -77,7 +79,7 @@ Choose a primary strategy plus fallback strategy and record the choice in `docs/
 
 ## Step 5 — Media resolution/download spike
 
-**Progress:** Compared public metadata and an embedded engine without adding dependencies. One anonymous public-Reel page probe had no direct media fields; sample/evidence and next permitted experiment are in `docs/TECHNICAL_SPIKE.md`. Resolution, APK/runtime engine measurements and a real saved Reel remain open.
+**Progress:** `DGOSAUyC903` resolves through matching public embed metadata; anonymous desktop download verified a muxed H.264/AAC MP4. Native on-device resolver/transfer implementation and a live Android test are added; Android and owner-device save gates pending. No heavy engine is justified for this sample (D-014).
 
 Compare practical on-device options, including a lightweight direct resolver and, only if justified, an embedded maintained downloader engine.
 
@@ -100,7 +102,7 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
-**Progress:** Native alternatives compared. An isolated MediaStore pending writer and synthetic video/audio instrumentation passed publication, cancellation/failure cleanup and filename collision checks on API 29/35/36, independently of Instagram. Actual transfer lifecycle, process-death recovery, job deduplication and real network interruption remain open pending a supported resolver.
+**Progress:** Added one user-started dataSync transfer service, progress/cancellation, activity-independent execution, a single-job checkpoint, app-owned pending cleanup and published-target deduplication. Controlled HTTP, service and recovery tests are added; new results and real-phone gallery acceptance remain pending.
 
 - Save through modern Android storage APIs.
 - Target `Movies/Tap Save/` unless testing shows a better user-visible location.

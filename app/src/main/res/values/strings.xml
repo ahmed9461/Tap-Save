@@ -1,6 +1,25 @@
 <resources>
     <string name="app_name">Tap Save</string>
-    <string name="spike_status">Reel saving is not available in this development build yet.</string>
+    <string name="spike_status">Share a public Instagram Reel to start saving it to Movies/Tap Save.</string>
+    <string name="save_channel">Reel saves</string>
+    <string name="resolving">Finding the video…</string>
+    <string name="downloading">Saving video…</string>
+    <string name="downloaded_bytes">%1$d KB downloaded</string>
+    <string name="cancelling">Cancelling…</string>
+    <string name="cancelled">Save cancelled</string>
+    <string name="saved">Saved to Movies/Tap Save</string>
+    <string name="cancel_save">Cancel save</string>
+    <string name="retry_save">Try again</string>
+    <string name="save_reel">Save Reel</string>
+    <string name="open_video">Open video</string>
+    <string name="save_busy">Another Reel is saving. Return here when it finishes to save this one.</string>
+    <string name="save_unavailable">Instagram says this Reel is unavailable. Try another public Reel.</string>
+    <string name="save_restricted">Instagram did not make this video available without signing in, or restricted its playback.</string>
+    <string name="save_unsupported">Instagram did not provide a downloadable video for this Reel.</string>
+    <string name="save_network">Connection failed. Check your connection and try again.</string>
+    <string name="save_storage">Could not save a complete video. Check free storage and try again.</string>
+    <string name="save_too_large">This video exceeds the 512 MB save limit.</string>
+    <string name="save_interrupted">Save interrupted. Tap Try again to restart safely.</string>
     <string name="link_received">Reel link received</string>
     <string name="short_link_received">Share link received. Resolving short links is not available yet.</string>
     <string name="share_one_reel">Share one Reel at a time.</string>

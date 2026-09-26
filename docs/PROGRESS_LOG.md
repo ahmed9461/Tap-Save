@@ -1,5 +1,11 @@
 # PROGRESS_LOG
 
+## 2026-09-27 — Owner acceptance and actual Share pipeline implementation
+
+- Owner confirmed Usage Access, overlay visibility in Instagram and reception of `Dc_WBLAuR7M` on Samsung SM-S908U1 / Android 16. Overlay tap only shows the Share hint; no phone download has passed yet.
+- The first sample was unavailable in this environment's logged-out browser/embed. Owner supplied `DGOSAUyC903` and confirmed incognito playback. Its public embed resolved anonymously; desktop transfer yielded 4,074,976 bytes, H.264 720×1280 + AAC, duration 26.665 seconds (SHA-256 `505790fbc134af30f11bc0e1ef723bf342dfe172c3c2bcf89907afb1ea33d63b`). Raw pages/media stay outside the repository.
+- Implemented the native resolver/transfer/service/MediaStore/UI pipeline and tests for actual HTTP behavior, failures, cancellation, activity recreation, duplicates and recovery. Added a separately requested live Android test. New build/runtime gates pending; this is not yet owner-device save acceptance.
+
 ## 2026-09-27 — Final automated foundation/spike gate passed
 
 - Final code `0e3bc84`, CI `36272869682`: clean debug build, strict lint, 14 JVM tests and 15 instrumentation tests on each of API 29/35/36; zero failures, errors or skips. Includes non-activity overlay attachment, notification Stop/worker termination and all six MediaStore transaction tests.

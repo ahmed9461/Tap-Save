@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      live_reel:
+        description: Canonical public Reel URL for the optional API 36 live save gate
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -48,14 +53,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        env:
+          LIVE_REEL: ${{ inputs.live_reel }}
+          API_LEVEL: ${{ matrix.api }}
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: ./gradlew --no-daemon :app:connectedDebugAndroidTest
+          script: python3 scripts/run_device_tests.py
       - name: Summarize verification evidence
-        if: always()
+        if: failure()
         run: python3 scripts/summarize_checks.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()

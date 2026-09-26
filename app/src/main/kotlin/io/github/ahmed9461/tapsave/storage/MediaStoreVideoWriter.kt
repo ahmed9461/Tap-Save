@@ -18,6 +18,7 @@ class MediaStoreVideoWriter(private val context: Context) {
         expectedBytes: Long? = null,
         cancelled: () -> Boolean = { Thread.currentThread().isInterrupted },
         onProgress: (Long) -> Unit = {},
+        expectsAudio: Boolean? = null,
     ): Uri {
         check(Looper.myLooper() != Looper.getMainLooper()) { "Media writes must run off the UI thread" }
         require(Regex("TapSave_[A-Za-z0-9_-]{1,80}\\.mp4").matches(displayName)) { "Unsafe media filename" }
@@ -45,6 +46,7 @@ class MediaStoreVideoWriter(private val context: Context) {
                         if (count < 0) break
                         output.write(buffer, 0, count)
                         copied += count
+                        if (copied > MAX_BYTES) throw IOException("Media exceeds size limit")
                         if (expectedBytes != null && copied > expectedBytes) throw IOException("Unexpected media size")
                         onProgress(copied)
                     }
@@ -58,6 +60,9 @@ class MediaStoreVideoWriter(private val context: Context) {
                 metadata.setDataSource(context, uri)
                 if (metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) != "yes") {
                     throw IOException("The response is not a supported video")
+                }
+                if (expectsAudio == true && metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) != "yes") {
+                    throw IOException("The response is missing its audio track")
                 }
             } finally {
                 metadata.release()
@@ -80,5 +85,8 @@ class MediaStoreVideoWriter(private val context: Context) {
         if (cancelled()) throw CancellationException("Save cancelled")
     }
 
-    companion object { const val FOLDER = "Movies/Tap Save/" }
+    companion object {
+        const val FOLDER = "Movies/Tap Save/"
+        const val MAX_BYTES = 512L * 1024 * 1024
+    }
 }

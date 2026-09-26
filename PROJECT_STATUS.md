@@ -3,7 +3,7 @@
 ## Current state
 
 **Phase:** Foundation / technical validation
-**Status:** Step 1 foundation complete; share, optional overlay and isolated storage prototypes pass the automated gate. Real-device and Reel-resolution gates remain open.
+**Status:** Owner verified Share reception and overlay visibility. The actual Share save pipeline is implemented and entering its build/runtime gate.
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
@@ -17,11 +17,11 @@
 ## Verification and limitations
 
 - Clean-checkout debug build, strict lint, 14 JVM tests and 15 instrumentation tests per job passed on API 29/35/36 at `0e3bc84` in CI run `36272869682`, including the non-activity window-context refinement. Zero failures/errors/skips.
-- Coverage includes share intake/recreation, window attachment, service Stop/permission revocation, worker termination, pending video/audio publication, cancellation/failure cleanup and filename collision safety. No real-device Instagram/OEM behavior has been verified.
-- This development build does not download media. Current-Reel identity, short-link resolution, a viable public media resolver and transfer/job lifecycle remain open. The isolated MediaStore writer was verified with synthetic fixtures; it is not connected to the share flow.
-- A bounded anonymous public-Reel page probe returned HTTP 200 but no direct video metadata. This is one environmental result, not a general claim about public Reel support.
-- No network permission, embedded downloader, credentials, cloud features or analytics have been added.
+- Owner confirmed Usage Access, overlay visibility in Instagram and receipt of `Dc_WBLAuR7M` on the S22 Ultra / Android 16. Drag/rotation, hide/show transitions, lock, OEM interruption and actual phone saving remain unverified.
+- New native Share save pipeline: public page/embed metadata, HTTPS transfer, progress/cancellation, pending MediaStore publication, one active job and retry/recovery. New code has not yet passed its CI gate. Direct-current-Reel identity and short-link resolution remain open.
+- Owner's second sample `DGOSAUyC903` resolved anonymously through its public embed; desktop download verified a 4,074,976-byte MP4 with H.264 720×1280 video and AAC audio. This proves the resolver candidate, not Android/phone saving.
+- Native INTERNET/dataSync permissions added; no embedded engine, credentials, cloud features or analytics.
 
 ## Next milestone
 
-Execute the independent real-device overlay/share checks in `docs/TECHNICAL_SPIKE.md` on the owner's Galaxy S22 Ultra / Android 16. The owner will supply a public unauthenticated Reel URL. Validate that path before choosing the resolver/download lifecycle. Keep Plan 0001 active; do not start UI polish or a new plan.
+Pass the new deterministic and public-Reel Android gates, then deliver a Share-saving APK for the owner to verify on the S22 Ultra. Continue direct-current-Reel work only after that save path succeeds. Keep Plan 0001 active.

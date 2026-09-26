@@ -7,3 +7,4 @@ local.properties
 *.jks
 *.keystore
 work/
+__pycache__/
