@@ -74,6 +74,7 @@ class SavePipelineIntegrationTest {
     }
 
     @Test fun metadataCannotSelectAnotherReelOrUntrustedCdn() {
+        assertNotNull(PublicReelMetadata.parse(publicEmbed("FixtureSave", wrapped = false), "FixtureSave"))
         assertNull(PublicReelMetadata.parse(publicEmbed("OtherReel"), "FixtureSave"))
         assertNull(PublicReelMetadata.parse(publicEmbed("FixtureSave").replace("video.cdninstagram.com", "cdninstagram.com.evil.test"), "FixtureSave"))
     }

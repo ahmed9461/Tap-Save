@@ -49,10 +49,13 @@ class HttpFixture(private val response: (String) -> Reply) : Closeable {
     }
 }
 
-fun publicEmbed(code: String, restricted: Boolean = false): String {
+fun publicEmbed(code: String, restricted: Boolean = false, wrapped: Boolean = true): String {
     val context = org.json.JSONObject().put("context", org.json.JSONObject().put("shortcode", code).put("copyright_blocked", restricted))
         .put("gql_data", org.json.JSONObject().put("shortcode_media", org.json.JSONObject()
             .put("shortcode", code).put("is_video", true).put("has_audio", true)
             .put("video_url", "https://video.cdninstagram.com/media.mp4")))
-    return "<script type=\"application/json\">${org.json.JSONObject().put("require", org.json.JSONArray().put(org.json.JSONObject().put("contextJSON", context.toString())))}</script>"
+    val payload = org.json.JSONObject().put("require", org.json.JSONArray().put(org.json.JSONObject().put("contextJSON", context.toString())))
+    // The observed public embed places this data inside a JavaScript requireLazy/ServerJS wrapper.
+    return if (wrapped) "<script>requireLazy([\"ServerJS\"],function(ServerJS){new ServerJS().handle($payload);});</script>"
+    else "<script type=\"application/json\">$payload</script>"
 }

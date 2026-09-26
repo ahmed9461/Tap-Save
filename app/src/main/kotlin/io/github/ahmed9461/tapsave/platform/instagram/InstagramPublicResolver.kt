@@ -31,6 +31,7 @@ object PublicReelMetadata {
     private val scripts = Regex("<script\\b[^>]*>(.*?)</script\\s*>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
     private val tags = Regex("<meta\\b[^>]*>", RegexOption.IGNORE_CASE)
     private val attributes = Regex("([\\w:]+)\\s*=\\s*([\"'])(.*?)\\2", RegexOption.DOT_MATCHES_ALL)
+    private val embeddedContext = Regex("\"contextJSON\"\\s*:\\s*(?=\")")
 
     fun parse(html: String, shortcode: String): ResolvedVideo? {
         if (html.contains("Post isn't available", true) || html.contains("The link to this photo or video may be broken", true)) {
@@ -76,6 +77,15 @@ object PublicReelMetadata {
             val data = script.groupValues[1].trim()
             if (data.startsWith('{') || data.startsWith('[')) {
                 try { walk(JSONTokener(data).nextValue(), 0) } catch (_: JSONException) { /* scripts are not all JSON */ }
+            } else {
+                // Public embeds wrap ServerJS data in requireLazy(...). Decode only the JSON
+                // string literal, never evaluate JavaScript or import its runtime/configuration.
+                embeddedContext.findAll(data).forEach { field ->
+                    try {
+                        val encoded = JSONTokener(data.substring(field.range.last + 1)).nextValue()
+                        if (encoded is String) walk(JSONTokener(encoded).nextValue(), 0)
+                    } catch (_: JSONException) { /* unsupported embedded data */ }
+                }
             }
         }
         if (candidate != null) return candidate
