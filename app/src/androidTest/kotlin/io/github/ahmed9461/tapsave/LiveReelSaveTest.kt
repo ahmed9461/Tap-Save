@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.ahmed9461.tapsave.download.*
 import io.github.ahmed9461.tapsave.platform.ShareResult
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramShareParser
+import io.github.ahmed9461.tapsave.platform.instagram.PublicReelMetadata
 import io.github.ahmed9461.tapsave.share.ShareActivity
 import org.junit.Assert.*
 import org.junit.Test
@@ -29,7 +30,19 @@ class LiveReelSaveTest {
         ActivityScenario.launch<ShareActivity>(intent).use {
             waitForSave(120_000) { SaveUiState.current?.let { state -> !state.active } == true }
             val state = SaveUiState.current!!
-            assertEquals("Public resolution failed: ${state.failure}", SavePhase.SAVED, state.phase)
+            val diagnostics = if (state.phase == SavePhase.FAILED && state.failure == SaveFailure.Reason.UNSUPPORTED) {
+                // A bounded diagnostic of the same public documents; no bodies or signed URLs are logged.
+                listOf(target.canonicalUrl, "${target.canonicalUrl}embed/").map { url ->
+                    try {
+                        val (_, html) = HttpTransfer().page(url, TransferCancellation())
+                        val parsed = PublicReelMetadata.parse(html, target.key.substringAfterLast(':'))
+                        "embed=${url.endsWith("embed/")}, chars=${html.length}, mediaFields=${Regex("video_url|video_versions|og:video").findAll(html).count()}, contextFields=${Regex("contextJSON").findAll(html).count()}, parsed=${parsed != null}"
+                    } catch (failure: Exception) {
+                        "${failure.javaClass.simpleName}: ${(failure as? SaveFailure)?.reason}; ${failure.stackTrace.firstOrNull { frame -> frame.className.startsWith("io.github.ahmed9461") }}"
+                    }
+                }.joinToString("; ")
+            } else ""
+            assertEquals("Public resolution failed: ${state.failure}; $diagnostics", SavePhase.SAVED, state.phase)
             val uri = state.uri!!
             try {
                 assertEquals(uri, reconcileMedia(context, target))

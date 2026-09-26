@@ -53,8 +53,9 @@ class SaveServiceIntegrationTest {
         ActivityScenario.launch<ShareActivity>(share("ServiceRecreate")).use { scenario ->
             waitForSave { SaveUiState.current?.phase == SavePhase.DOWNLOADING }
             scenario.recreate()
-            waitForSave { SaveUiState.current?.phase == SavePhase.SAVED }
         }
+        // Closing the share screen must leave the user-started foreground transfer running.
+        waitForSave { SaveUiState.current?.phase == SavePhase.SAVED }
         val first = SaveUiState.current!!.uri
         val firstState = SaveUiState.current
         waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-transfer" && it.isAlive } }
