@@ -88,6 +88,13 @@ class SavePipelineIntegrationTest {
         }
     }
 
+    @Test fun excessiveEmbeddedContextsAreRejected() {
+        val html = "<script>wrap([" + List(17) { "{\"contextJSON\":\"{}\"}" }.joinToString(",") + "]);</script>"
+        assertEquals(SaveFailure.Reason.UNSUPPORTED, assertThrows(SaveFailure::class.java) {
+            PublicReelMetadata.parse(html, "FixtureSave")
+        }.reason)
+    }
+
     @Test fun interruptedPendingRowIsCleanedWithoutDeletingPublishedMedia() {
         val values = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, mediaName(target))

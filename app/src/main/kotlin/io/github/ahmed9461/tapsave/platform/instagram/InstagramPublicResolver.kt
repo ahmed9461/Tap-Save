@@ -42,6 +42,7 @@ object PublicReelMetadata {
         }
         var candidate: ResolvedVideo? = null
         var visited = 0
+        var embeddedFields = 0
         fun walk(value: Any?, depth: Int) {
             if (depth > 60 || ++visited > 60_000) throw SaveFailure(SaveFailure.Reason.UNSUPPORTED)
             when (value) {
@@ -81,6 +82,7 @@ object PublicReelMetadata {
                 // Public embeds wrap ServerJS data in requireLazy(...). Decode only the JSON
                 // string literal, never evaluate JavaScript or import its runtime/configuration.
                 embeddedContext.findAll(data).forEach { field ->
+                    if (++embeddedFields > 16) throw SaveFailure(SaveFailure.Reason.UNSUPPORTED)
                     try {
                         val encoded = JSONTokener(data.substring(field.range.last + 1)).nextValue()
                         if (encoded is String) walk(JSONTokener(encoded).nextValue(), 0)
