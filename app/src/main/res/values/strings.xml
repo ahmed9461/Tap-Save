@@ -2,4 +2,9 @@
     <string name="app_name">Tap Save</string>
     <string name="foundation_status">Android foundation ready</string>
     <string name="spike_status">Reel saving is not available in this development build yet.</string>
+    <string name="link_received">Reel link received</string>
+    <string name="short_link_received">Share link received. Resolving short links is not available yet.</string>
+    <string name="share_one_reel">Share one Reel at a time.</string>
+    <string name="invalid_share">Share an Instagram Reel link to Tap Save.</string>
+    <string name="done">Done</string>
 </resources>
