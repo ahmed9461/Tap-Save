@@ -80,13 +80,13 @@ No full-screen interstitial, no ad, no unnecessary confirmation for the normal s
 
 ## Foundation implementation
 
-- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner confirmed Usage Access, overlay visibility in Instagram and Share URL receipt. A real public Reel save passed on an API 36 emulator; owner-phone save/playback remains the next gate. Keep it independent from current-Reel identification.
+- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner confirmed Usage Access, overlay visibility in Instagram and Share URL receipt. Owner now reports some actual public Reel saves and failures on others; Instagram 448.0.0.52.84, Arabic. Detailed gallery/quality/lifecycle acceptance remains open. Keep it independent from current-Reel identification.
 
-- Single `app` module, namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device compatibility still needs verification.
+- One shipping `app` module plus `instagram-fixture` for disposable emulator tests only, namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device compatibility still needs verification.
 - Pinned versions and their primary sources are in `docs/TECHNICAL_SPIKE.md`; use the wrapper and `docs/BUILDING.md` commands.
 - `SharedTargetParser` isolates Instagram URL normalization. Direct Reel links are canonicalized and tracking removed. `/share/reel/` tokens are classified separately; they are not Reel IDs. Never treat the last shared target as the Reel currently on screen.
-- Share activity is independent of overlay/usage/notification permissions. The 0.2 development pipeline performs public resolution, cancellable transfer and MediaStore publication. `DGOSAUyC903` passed the live Android save test at `03a5d1f`; this is emulator evidence, not Samsung acceptance or broad Instagram compatibility.
-- The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. No accessibility service, clipboard listener, boot receiver, wake lock or analytics is present. Networking is limited to explicit Share save requests.
+- Share activity is independent of overlay/usage/notification permissions. The native development pipeline performs public resolution, cancellable transfer and MediaStore publication. `DGOSAUyC903` passed the live Android save test at `03a5d1f`; this is emulator evidence, not Samsung acceptance or broad Instagram compatibility.
+- The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. The 0.3 opt-in accessibility adapter is package-filtered to Instagram, reads semantic nodes only during an eight-second user request, and uses a focused activity to read only a fresh copied Reel link. No clipboard listener, boot receiver, wake lock or analytics. Both explicit Share and overlay saves use the same transfer service.
 - Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
 - Plan 0001 Step 1 passed the clean CI build/unit/lint gate; Step 3 URL reception passed owner-device validation. Keep the plan active until its remaining overlay/current-target and save acceptance gates are met.
 - `MediaStoreVideoWriter` uses pending rows and rollback. The Share pipeline adds a single short `dataSync` service, one job checkpoint, exact-target app-owned row reconciliation and deduplication. Build/runtime evidence must distinguish synthetic fixtures, a real public resolver/download and owner-device acceptance.
@@ -96,3 +96,11 @@ No full-screen interstitial, no ad, no unnecessary confirmation for the normal s
 ## Repository workflow
 
 Agents must follow `AGENTS.md`, the active plan, and the project documentation. Stable decisions belong in `docs/DECISIONS.md`; chronological work belongs in `docs/PROGRESS_LOG.md`.
+
+## Version 0.3 experiment boundaries
+
+- Public page/embed resolution always precedes optional authenticated requests. Session cookies are read through private IPC from a dedicated `:instagram` WebView process/profile; only the opt-in flag is stored by the main process. No password field scraping, JavaScript bridge, credential logging, third-party downloader, or cookie forwarding to media/CDN hosts. Disconnect disables immediately, cancels a transfer and clears the isolated profile. Actual owner-account login/fallback requires phone validation.
+- Direct acquisition never reuses a previously shared URL or stale clipboard. It selects a unique semantic Share control and Copy link control (Arabic/English), then validates a timestamped clipboard handoff. Missing/ambiguous controls, another app, lock, interruption and timeout fail with acquisition codes and the independent Share fallback. Actual Instagram node labels remain an empirical device gate.
+- Rank available progressive MP4 variants by advertised dimensions, preserve original bytes/audio, and refresh resolution once for an expired CDN URL. No DASH muxing or promise of Instagram's absolute maximum quality. Diagnostics distinguish auth, rate limit, unavailable metadata, incompatible extraction, network, expired URL and storage errors without response bodies/session/CDN URLs.
+- `/share/reel/` tokens are resolved to canonical Reel identities before allocation/deduplication. The checkpoint also retains the sanitized requested link so Share UI can follow normalization.
+- The disposable `com.instagram.android` fixture tests Android accessibility/clipboard semantics, not the real Instagram app. The runner refuses non-emulators or an existing Instagram installation. Never install this fixture on the owner's phone or distribute it as the Tap Save APK.

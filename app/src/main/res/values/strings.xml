@@ -14,14 +14,13 @@
     <string name="open_video">Open video</string>
     <string name="save_busy">Another Reel is saving. Return here when it finishes to save this one.</string>
     <string name="save_unavailable">Instagram says this Reel is unavailable. Try another public Reel.</string>
-    <string name="save_restricted">Instagram did not make this video available without signing in, or restricted its playback.</string>
+    <string name="save_restricted">Instagram restricted this video or requires a security check. Tap Save cannot save it.</string>
     <string name="save_unsupported">Instagram did not provide a downloadable video for this Reel.</string>
     <string name="save_network">Connection failed. Check your connection and try again.</string>
     <string name="save_storage">Could not save a complete video. Check free storage and try again.</string>
     <string name="save_too_large">This video exceeds the 512 MB save limit.</string>
     <string name="save_interrupted">Save interrupted. Tap Try again to restart safely.</string>
     <string name="link_received">Reel link received</string>
-    <string name="short_link_received">Share link received. Resolving short links is not available yet.</string>
     <string name="share_one_reel">Share one Reel at a time.</string>
     <string name="invalid_share">Share an Instagram Reel link to Tap Save.</string>
     <string name="done">Done</string>
@@ -48,5 +47,5 @@
     <string name="save_rate_limited">Instagram is limiting requests. Wait before trying again.</string>
     <string name="save_metadata_unavailable">Instagram returned no media metadata for this Reel. Try an optional Instagram session or another Reel.</string>
     <string name="save_extractor_incompatible">This Reel uses a media format Tap Save cannot read yet.</string>
-    <string name="save_expired_url">The video link expired. Try again to request a fresh link.</string>
+    <string name="save_expired_url">Instagram rejected the video link after a refresh. Try again later.</string>
 </resources>

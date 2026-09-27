@@ -107,3 +107,34 @@ The owner's device is a Samsung Galaxy S22 Ultra SM-S908U1 on Android 16. The em
 5. Share a real public Reel directly from Instagram, including any `/share/reel/` form. Compare the displayed canonical URL against the actual intended Reel. ADB/test-fixture shares cannot establish this gate.
    The owner confirmed direct URL reception and supplied `DGOSAUyC903` after logged-out playback. Short share-token acceptance remains unproven. Direct-current-Reel identity is still absent: separately assess what the least invasive APIs expose while switching Reels after phone Share saving succeeds; do not infer success from an overlay appearing or introduce accessibility without evidence.
 6. Resolve/save only permitted public media, verify audio/quality, Samsung gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. Synthetic MediaStore evidence cannot satisfy this end-to-end saving gate.
+
+## 2026-09-28 — Direct acquisition and resolver reliability continuation
+
+Owner reports actual Share saves for some public Reels, and failures for others, on SM-S908U1 / Android 16 with Instagram **448.0.0.52.84, Arabic**. This supersedes the earlier absence of phone-save evidence without claiming comprehensive gallery/audio/lifecycle acceptance. Version 0.3 implements D-015/D-016; synthetic and live gates are tracked below as they complete.
+
+### Engine comparison measured from publisher artifacts
+
+[Maven Central library metadata](https://repo.maven.apache.org/maven2/io/github/junkfood02/youtubedl-android/library/maven-metadata.xml) reported **0.18.1**. Downloaded that release's library and FFmpeg AAR ZIPs for inspection outside the repository; they are not dependencies.
+
+| Measured artifact | AAR bytes, all four ABIs | ZIP entries expanded, including still-compressed nested payloads | arm64 nested runtime payload |
+|---|---:|---:|---:|
+| library 0.18.1 | 59,213,110 | 62,117,375 | Python ZIP: 14,305,904 bytes |
+| ffmpeg 0.18.1 | 139,371,444 | 141,294,540 | FFmpeg ZIP: 35,624,931 bytes |
+
+The extractor payload adds 3,170,726 bytes within the library. These are AAR/payload measurements, **not measured final APK deltas or installed footprints**; ABI filtering/compression/dependencies change those. The [initializer source](https://github.com/yausername/youtubedl-android/blob/master/library/src/main/java/com/yausername/youtubedl_android/YoutubeDL.kt) copies yt-dlp, unpacks Python on first initialization/version changes, then spawns a Python process per extraction. Startup latency was not benchmarked; no engine is installed in Tap Save. Wrapper upkeep also covers ABI binaries, transitive Jackson/Commons IO/AppCompat, extractor updates and subprocess cancellation. Native resolution adds no production dependency or extraction-runtime initialization, and preserves original combined MP4 audio. DASH-only/best-separate-stream support remains a limitation, not an implied quality guarantee.
+
+### Multiple public probes
+
+- `DGOSAUyC903`: current anonymous embed still exposes matching non-copyright-blocked media.
+- `Cop84x6u7CP`: independent Reel from the maintained extractor's public URL fixtures; current anonymous embed exposes matching non-copyright-blocked media. Desktop download: **2,424,478 bytes**, SHA-256 `3fa42f09cb47b6d41ba4a9a797eb27385ca8b2ccab6d90a43367a9041d8581bb`; FFprobe: **H.264 720×1280, AAC, 19.108617 seconds**. Full FFmpeg decode passed. This will also run through the separate real Android Share gate.
+- `Dc_WBLAuR7M`, `CDUMkliABpa`, `CWqAgUZgCku`: anonymous embed and alternate public post-permalink probes returned HTML without media fields here. They are recorded as unavailable metadata in this environment; no claim that these Reels are private or universally unavailable. The alternate permalink route supplied no benefit and was not added as another request in the app.
+- No owner-authenticated test has occurred. Login/session fallback is optional and awaiting real account acceptance. Raw HTML, signed CDN URLs, media captures and inspected AARs are not committed.
+
+### Owner test sequence for 0.3
+
+1. Share → Tap Save with optional adapter/session disabled; test several public Reels, including the confirmed sample. Verify Movies/Tap Save, video/audio, cancellation and failure codes.
+2. Enable **Tap Save • Instagram only** in Android Accessibility settings, keep overlay/Usage Access enabled, and start the overlay. On a Reel tap ↓. Expect brief Share/Copy and link-reading handoff, progress, then ✓. Switch to a different Reel and repeat; confirm the saved identity changes. An acquisition failure code identifies the missing control/handoff instead of silently reusing an old link.
+3. Optionally Connect Instagram, sign in on Instagram's own page, and choose Use session. Retry a public Reel that fails anonymously. Public resolution still runs first. Check success/failure diagnostics; owner login and session benefit are not presumed.
+4. Disconnect/Clear, verify disabled status, and retry anonymously. Test successive taps/cancellation, lock/unlock, navigation away, permission revocation and notification Stop without an orphan overlay or pending file.
+
+The shipping APK does not include the separate `com.instagram.android` UI fixture. Its Arabic/English controls test platform mechanics and fresh/stale clipboard handling only; they do not validate Instagram's actual node tree.

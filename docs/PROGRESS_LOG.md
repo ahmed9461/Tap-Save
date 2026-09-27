@@ -74,3 +74,11 @@
 - Recorded privacy, scope, and access-control boundaries.
 - Added roadmap, product specification, decision log, idea parking lot, project status, project memory, agent rules, and initial active plan.
 - No application code has been written yet.
+
+## 2026-09-28 — Direct acquisition and reliability implementation (verification in progress)
+
+- Recorded owner confirmation of some real phone saves and failures on other public Reels; Instagram 448.0.0.52.84 Arabic. No waiting for additional failing URLs.
+- Added opt-in package-limited semantic Share/Copy acquisition and fresh focused clipboard handoff; same foreground save pipeline and overlay progress/cancel/success. Share remains independent.
+- Added optional isolated real Instagram login/session, public-first ordered fallbacks, cookie-origin confinement/clear, short-link normalization, highest progressive variant selection, bounded expired-media refresh and specific safe diagnostics.
+- Compared native implementation against publisher wrapper/FFmpeg AAR size and initializer/subprocess maintenance. No production dependency added. Added disposable Arabic/English UI fixture and controlled resolver/session/lifecycle regressions; build/emulator validation is running.
+- Independently resolved/downloaded/fully decoded a second public Reel, `Cop84x6u7CP`, on desktop; added it to the Android live gate with `DGOSAUyC903`. Three other anonymous sample documents exposed no downloadable metadata. Actual Instagram UI and owner-account login acceptance remain open.
