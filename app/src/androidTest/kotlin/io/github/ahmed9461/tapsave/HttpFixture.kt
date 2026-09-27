@@ -14,6 +14,7 @@ class HttpFixture(private val response: (String) -> Reply) : Closeable {
     data class Reply(val type: String, val bytes: ByteArray, val declaredLength: Int = bytes.size, val delayMs: Long = 0, val status: Int = 200, val location: String? = null)
     private val server = ServerSocket(0)
     private val clients = Collections.synchronizedList(mutableListOf<Socket>())
+    val headers = Collections.synchronizedList(mutableListOf<Map<String, String>>())
     val paths = Collections.synchronizedList(mutableListOf<String>())
     private val worker = Executors.newCachedThreadPool()
     val http = HttpTransfer { uri -> URL("http://127.0.0.1:${server.localPort}${uri.rawPath}").openConnection() as HttpURLConnection }
@@ -26,7 +27,13 @@ class HttpFixture(private val response: (String) -> Reply) : Closeable {
                     try { socket.use {
                         val reader = it.getInputStream().bufferedReader()
                         val path = reader.readLine().split(' ')[1]
-                        while (!reader.readLine().isNullOrBlank()) { /* HTTP headers */ }
+                        val fields = mutableMapOf<String, String>()
+                        while (true) {
+                            val line = reader.readLine()
+                            if (line.isNullOrBlank()) break
+                            fields[line.substringBefore(':').lowercase()] = line.substringAfter(':').trim()
+                        }
+                        headers += fields
                         paths += path
                         val reply = response(path)
                         val output = it.getOutputStream()

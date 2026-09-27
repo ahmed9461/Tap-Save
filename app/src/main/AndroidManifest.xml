@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
+        android:name=".session.TapSaveApplication"
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -16,6 +17,13 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.TapSave">
+        <service android:name=".session.InstagramSessionService" android:exported="false" android:process=":instagram" />
+        <activity android:name=".session.InstagramLoginActivity" android:exported="false" android:process=":instagram" android:excludeFromRecents="true" />
+        <activity android:name=".platform.instagram.ReelLinkCaptureActivity" android:exported="false" android:excludeFromRecents="true" android:taskAffinity="" android:theme="@style/Theme.TapSave.LinkCapture" />
+        <service android:name=".platform.instagram.InstagramAccessibilityService" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:label="@string/accessibility_label">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/instagram_accessibility" />
+        </service>
         <service android:name=".download.SaveService" android:exported="false" android:foregroundServiceType="dataSync" />
         <service android:name=".overlay.OverlayService" android:exported="false"
             android:foregroundServiceType="specialUse">

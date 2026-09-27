@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import io.github.ahmed9461.tapsave.R
+import io.github.ahmed9461.tapsave.platform.pendingTarget
 import io.github.ahmed9461.tapsave.platform.ShareResult
 import io.github.ahmed9461.tapsave.ui.SpikeScreen
 import io.github.ahmed9461.tapsave.download.SaveFailure
@@ -37,17 +38,19 @@ class ShareActivity : ComponentActivity() {
             }
         }
         if (intent.action == SaveService.VIEW) result = SaveUiState.current?.target?.let(ShareResult::Target) ?: ShareResult.Invalid
-        startOnResume = savedInstanceState == null && intent.action == Intent.ACTION_SEND && result is ShareResult.Target
+        startOnResume = savedInstanceState == null && intent.action == Intent.ACTION_SEND && result.pendingTarget() != null
         enableEdgeToEdge()
         setContent {
             SpikeScreen {
                 when (val current = result) {
-                    is ShareResult.Target -> {
+                    is ShareResult.Target, is ShareResult.RedirectLink -> {
+                        val input = current.pendingTarget()!!
                         Text(stringResource(R.string.link_received))
-                        Text(current.target.canonicalUrl)
+                        Text(input.canonicalUrl)
                         val status = SaveUiState.current
-                        if (status?.target?.key == current.target.key) {
+                        if (status != null && (status.target.key == input.key || status.requestedUrl == input.canonicalUrl)) {
                             Text(saveMessage(this@ShareActivity, status))
+                            if (status.phase == SavePhase.FAILED) Text(listOfNotNull(status.failure?.name, status.diagnostic).joinToString(" · "))
                             if (status.active) {
                                 val total = status.total
                                 if (total != null) LinearProgressIndicator(progress = { (status.bytes.toFloat() / total).coerceIn(0f, 1f) })
@@ -65,10 +68,6 @@ class ShareActivity : ComponentActivity() {
                         } else if (status?.active == true) Text(stringResource(R.string.save_busy))
                         else Button(onClick = { startSave() }) { Text(stringResource(R.string.save_reel)) }
                     }
-                    is ShareResult.RedirectLink -> {
-                        Text(stringResource(R.string.short_link_received))
-                        Text(current.canonicalUrl)
-                    }
                     ShareResult.Ambiguous -> Text(stringResource(R.string.share_one_reel))
                     ShareResult.Invalid -> Text(stringResource(R.string.invalid_share))
                 }
@@ -82,7 +81,7 @@ class ShareActivity : ComponentActivity() {
         setIntent(intent)
         result = readShareIntent(intent)
         if (intent.action == SaveService.VIEW) result = SaveUiState.current?.target?.let(ShareResult::Target) ?: ShareResult.Invalid
-        startOnResume = intent.action == Intent.ACTION_SEND && result is ShareResult.Target
+        startOnResume = intent.action == Intent.ACTION_SEND && result.pendingTarget() != null
     }
 
     override fun onPostResume() {
@@ -91,7 +90,7 @@ class ShareActivity : ComponentActivity() {
     }
 
     private fun startSave() {
-        val target = (result as? ShareResult.Target)?.target ?: return
+        val target = result.pendingTarget() ?: return
         if (SaveUiState.current?.active == true) return
         try { startForegroundService(Intent(this, SaveService::class.java).putExtra(SaveService.TARGET, target.canonicalUrl)) }
         catch (_: RuntimeException) { SaveUiState.current = SaveState(target, SavePhase.FAILED, failure = SaveFailure.Reason.INTERRUPTED) }

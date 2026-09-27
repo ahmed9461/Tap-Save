@@ -25,7 +25,7 @@
     <string name="share_one_reel">Share one Reel at a time.</string>
     <string name="invalid_share">Share an Instagram Reel link to Tap Save.</string>
     <string name="done">Done</string>
-    <string name="overlay_experiment">Optional overlay experiment. Enable overlay, usage access and notifications, then start a session. The control appears in Instagram; tapping it reminds you to share the Reel. Current-Reel detection is not available yet.</string>
+    <string name="overlay_experiment">Enable the optional Instagram adapter for ↓ to acquire the current Reel through Share and Copy link. A brief link-reading window may appear. Share → Tap Save also works independently.</string>
     <string name="overlay_permission">Allow floating control</string>
     <string name="usage_permission">Allow app context access</string>
     <string name="notification_permission">Allow session notifications</string>
@@ -38,4 +38,15 @@
     <string name="overlay_share_hint">Share a Reel to Tap Save</string>
     <string name="overlay_channel">Overlay session</string>
     <string name="overlay_notification">Tap Save overlay experiment is running</string>
+    <string name="reading_reel">Reading the current Reel link…</string>
+    <string name="accessibility_label">Tap Save • Instagram only</string>
+    <string name="accessibility_enable">Enable the optional Instagram adapter in Tap Save, or Share a Reel to Tap Save.</string>
+    <string name="accessibility_description">Only after you tap ↓, Tap Save reads Instagram controls and selects Share then Copy link. A brief focused window reads the newly copied link. No idle screen reading, message sending, or monitoring of other apps. You can disable this service at any time.</string>
+    <string name="session_cleared">Instagram session disconnected and cleared.</string>
+    <string name="session_clear_failed">Session disabled. Clearing could not be confirmed; try Clear again.</string>
+    <string name="save_auth_required">Instagram requires sign-in. Connect an optional Instagram session in Tap Save, then retry.</string>
+    <string name="save_rate_limited">Instagram is limiting requests. Wait before trying again.</string>
+    <string name="save_metadata_unavailable">Instagram returned no media metadata for this Reel. Try an optional Instagram session or another Reel.</string>
+    <string name="save_extractor_incompatible">This Reel uses a media format Tap Save cannot read yet.</string>
+    <string name="save_expired_url">The video link expired. Try again to request a fresh link.</string>
 </resources>

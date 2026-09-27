@@ -13,3 +13,10 @@ sealed interface ShareResult {
 fun interface SharedTargetParser {
     fun parse(text: String?): ShareResult
 }
+
+/** A share token is a pending input, never used as a media identity. */
+fun ShareResult.pendingTarget(): SharedTarget? = when (this) {
+    is ShareResult.Target -> target
+    is ShareResult.RedirectLink -> SharedTarget("instagram:share:${canonicalUrl.trimEnd('/').substringAfterLast('/')}", canonicalUrl)
+    else -> null
+}

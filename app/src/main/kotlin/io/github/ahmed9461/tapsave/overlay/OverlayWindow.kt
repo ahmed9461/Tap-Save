@@ -11,13 +11,12 @@ import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.Toast
 import androidx.core.content.edit
 import io.github.ahmed9461.tapsave.R
 import kotlin.math.roundToInt
 
 /** One small, non-focusable native window. All calls are on the main thread. */
-class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit) {
+class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, private val onTap: () -> Unit = {}) {
     // A service is not a visual context. Bind resources and WindowManager to the overlay's display.
     private val context = if (Build.VERSION.SDK_INT >= 30) {
         val display = baseContext.getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
@@ -28,6 +27,9 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit) {
     private val preferences = context.getSharedPreferences("overlay", Context.MODE_PRIVATE)
     private val size = (56 * context.resources.displayMetrics.density).roundToInt()
     private var button: Button? = null
+    private var glyph = "↓"
+    private var description = "Save current Reel"
+    fun render(text: String, label: String) { glyph = text; description = label; button?.apply { this.text = glyph; contentDescription = description } }
     @SuppressLint("RtlHardcoded") // Drag coordinates and saved positions are physical screen coordinates.
     private val params = WindowManager.LayoutParams(
         size, size, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -46,10 +48,10 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit) {
         if (button != null) return
         clampPosition()
         val view = Button(context).apply {
-            text = "↓"
-            contentDescription = context.getString(R.string.overlay_share_hint)
+            text = glyph
+            contentDescription = description
             setOnClickListener {
-                Toast.makeText(context, R.string.overlay_share_hint, Toast.LENGTH_SHORT).show()
+                onTap()
             }
         }
         var downX = 0f

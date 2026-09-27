@@ -16,6 +16,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
 import io.github.ahmed9461.tapsave.R
+import io.github.ahmed9461.tapsave.platform.pendingTarget
+import io.github.ahmed9461.tapsave.platform.instagram.InstagramLinkNormalizer
 import io.github.ahmed9461.tapsave.platform.ShareResult
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramShareParser
 import io.github.ahmed9461.tapsave.share.ShareActivity
@@ -44,7 +46,7 @@ class SaveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         latestStartId = startId
         if (intent?.action == CANCEL) { cancelSave(); if (cancellation == null) stopSelf(); return START_NOT_STICKY }
-        val target = (InstagramShareParser.parse(intent?.getStringExtra(TARGET)) as? ShareResult.Target)?.target
+        val target = InstagramShareParser.parse(intent?.getStringExtra(TARGET)).pendingTarget()
         if (target == null) { if (cancellation == null) stopSelf(); return START_NOT_STICKY }
         if (cancellation != null) return START_NOT_STICKY // One active job; UI shows busy for another target.
         val signal = TransferCancellation()
@@ -61,10 +63,13 @@ class SaveService : Service() {
         }
         main.postDelayed(deadline, 10 * 60 * 1000L)
         executor.execute { synchronized(jobLock) {
+            var resolved = initial
             val finished = try {
                 // No automatic resume: clean only the previous interrupted target before this explicit request.
                 journal.read()?.takeIf { it.active }?.let { reconcileMedia(this, it.target) }
-                journal.write(initial)
+                val target = InstagramLinkNormalizer(HttpTransfer()) { io.github.ahmed9461.tapsave.session.InstagramSession.cookies(this) }.normalize(target, signal)
+                resolved = initial.copy(target = target)
+                journal.write(resolved)
                 signal.check()
                 val existing = reconcileMedia(this, target)
                 val uri = existing ?: (testFactory?.invoke(this) ?: SavePipeline(this)).save(target, signal) { bytes, total ->
@@ -74,7 +79,7 @@ class SaveService : Service() {
                         lastProgressTime = now
                         main.post {
                             if (!destroyed && SaveUiState.current?.phase != SavePhase.CANCELLING) {
-                                val progress = initial.copy(phase = SavePhase.DOWNLOADING, bytes = bytes, total = total)
+                                val progress = resolved.copy(phase = SavePhase.DOWNLOADING, bytes = bytes, total = total)
                                 SaveUiState.current = progress
                                 postNotification(progress)
                             }
@@ -82,9 +87,9 @@ class SaveService : Service() {
                     }
                 }
                 // Once MediaStore published, cancellation must not turn a completed save into a failure.
-                initial.copy(phase = SavePhase.SAVED, uri = uri)
+                resolved.copy(phase = SavePhase.SAVED, uri = uri)
             } catch (_: CancellationException) {
-                initial.copy(phase = SavePhase.CANCELLED)
+                resolved.copy(phase = SavePhase.CANCELLED)
             } catch (failure: Exception) {
                 val reason = when (failure) {
                     is SaveFailure -> failure.reason
@@ -93,8 +98,8 @@ class SaveService : Service() {
                     else -> SaveFailure.Reason.UNSUPPORTED
                 }
                 // disconnect() may report IOException instead of InterruptedException.
-                try { signal.check(); initial.copy(phase = SavePhase.FAILED, failure = reason) }
-                catch (_: CancellationException) { initial.copy(phase = SavePhase.CANCELLED) }
+                try { signal.check(); resolved.copy(phase = SavePhase.FAILED, failure = reason, diagnostic = if (failure is SaveFailure) listOfNotNull(failure.stage.takeIf { it.isNotEmpty() }, failure.status?.let { "HTTP $it" }).joinToString(" · ") else null) }
+                catch (_: CancellationException) { resolved.copy(phase = SavePhase.CANCELLED) }
             }
             try { journal.write(finished) } catch (_: IOException) { /* MediaStore remains authoritative for completed files. */ }
             main.post {
@@ -169,6 +174,11 @@ fun saveMessage(context: Context, state: SaveState): String = context.getString(
     SavePhase.CANCELLED -> R.string.cancelled
     SavePhase.SAVED -> R.string.saved
     SavePhase.FAILED -> when (state.failure) {
+        SaveFailure.Reason.AUTH_REQUIRED -> R.string.save_auth_required
+        SaveFailure.Reason.RATE_LIMITED -> R.string.save_rate_limited
+        SaveFailure.Reason.METADATA_UNAVAILABLE -> R.string.save_metadata_unavailable
+        SaveFailure.Reason.EXTRACTOR_INCOMPATIBLE -> R.string.save_extractor_incompatible
+        SaveFailure.Reason.EXPIRED_URL -> R.string.save_expired_url
         SaveFailure.Reason.UNAVAILABLE -> R.string.save_unavailable
         SaveFailure.Reason.RESTRICTED -> R.string.save_restricted
         SaveFailure.Reason.NETWORK -> R.string.save_network

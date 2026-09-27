@@ -20,6 +20,9 @@ import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
+import android.widget.Toast
+import io.github.ahmed9461.tapsave.download.*
+import io.github.ahmed9461.tapsave.platform.instagram.InstagramAccessibilityService
 import io.github.ahmed9461.tapsave.MainActivity
 import io.github.ahmed9461.tapsave.R
 import io.github.ahmed9461.tapsave.platform.UsageForegroundContext
@@ -32,6 +35,48 @@ class OverlayService : Service() {
     private lateinit var worker: Handler
     private lateinit var foreground: UsageForegroundContext
     private lateinit var window: OverlayWindow
+    private var acquiring = false
+    private val resetStatus = Runnable { if (!acquiring && SaveUiState.current?.active != true) window.render("↓", "Save current Reel") }
+    private val saveObserver: (SaveState?) -> Unit = { state ->
+        main.removeCallbacks(resetStatus)
+        if (state != null) {
+            val glyph = when (state.phase) {
+                SavePhase.RESOLVING -> "…"
+                SavePhase.DOWNLOADING -> state.total?.let { "${(state.bytes * 100 / it).coerceIn(0, 100)}%" } ?: "…"
+                SavePhase.CANCELLING -> "…"
+                SavePhase.SAVED -> "✓"
+                SavePhase.FAILED -> "!"
+                SavePhase.CANCELLED -> "↓"
+            }
+            window.render(glyph, saveMessage(this, state) + if (state.active) ". Tap to cancel" else ". Tap to save current Reel")
+            if (state.phase == SavePhase.FAILED) Toast.makeText(this, saveMessage(this, state), Toast.LENGTH_LONG).show()
+            if (!state.active) main.postDelayed(resetStatus, 3_000)
+        }
+    }
+    private fun tapSave() {
+        if (SaveUiState.current?.active == true) { startService(Intent(this, SaveService::class.java).setAction(SaveService.CANCEL)); return }
+        if (acquiring) { InstagramAccessibilityService.connected?.onInterrupt(); return }
+        val adapter = InstagramAccessibilityService.connected
+        if (adapter == null) {
+            window.render("!", getString(R.string.accessibility_enable))
+            Toast.makeText(this, R.string.accessibility_enable, Toast.LENGTH_LONG).show(); return
+        }
+        acquiring = true
+        main.removeCallbacks(resetStatus)
+        window.render("…", getString(R.string.reading_reel))
+        adapter.acquire { result ->
+            acquiring = false
+            result.onSuccess { url ->
+                try { startForegroundService(Intent(this, SaveService::class.java).putExtra(SaveService.TARGET, url)) }
+                catch (_: RuntimeException) { acquisitionFailed("SAVE_START_FAILED") }
+            }.onFailure { acquisitionFailed(it.message.orEmpty()) }
+        }
+    }
+    private fun acquisitionFailed(code: String) {
+        window.render("!", "$code. " + getString(R.string.overlay_share_hint))
+        Toast.makeText(this, "$code · " + getString(R.string.overlay_share_hint), Toast.LENGTH_LONG).show()
+        main.postDelayed(resetStatus, 3_000)
+    }
     private val generation = AtomicInteger()
     @Volatile private var polling = false
 
@@ -62,7 +107,8 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         foreground = UsageForegroundContext(this)
-        window = OverlayWindow(this, onFailure = { stopSelf() })
+        window = OverlayWindow(this, onFailure = { stopSelf() }, onTap = { tapSave() })
+        SaveUiState.observe(saveObserver)
         workerThread = HandlerThread("TapSave-context").apply { start() }
         worker = Handler(workerThread.looper)
         val filter = IntentFilter().apply {
@@ -105,6 +151,7 @@ class OverlayService : Service() {
         generation.incrementAndGet()
         worker.removeCallbacksAndMessages(null)
         window.hide()
+        if (!screenUsable() && acquiring) InstagramAccessibilityService.connected?.onInterrupt()
         if (screenUsable()) {
             polling = true
             worker.post {
@@ -131,6 +178,8 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        SaveUiState.remove(saveObserver)
+        if (acquiring) InstagramAccessibilityService.connected?.onInterrupt()
         polling = false
         generation.incrementAndGet()
         worker.removeCallbacksAndMessages(null)

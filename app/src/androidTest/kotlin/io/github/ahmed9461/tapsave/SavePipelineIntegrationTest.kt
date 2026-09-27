@@ -81,10 +81,10 @@ class SavePipelineIntegrationTest {
 
     @Test fun redirectToLoginStopsWithoutFollowingIt() {
         HttpFixture { HttpFixture.Reply("text/html", byteArrayOf(), status = 302, location = "https://www.instagram.com/accounts/login/") }.use { server ->
-            assertEquals(SaveFailure.Reason.RESTRICTED, assertThrows(SaveFailure::class.java) {
+            assertEquals(SaveFailure.Reason.AUTH_REQUIRED, assertThrows(SaveFailure::class.java) {
                 SavePipeline(context, server.http).save(target, TransferCancellation()) { _, _ -> }
             }.reason)
-            assertEquals(1, server.paths.size)
+            assertEquals(2, server.paths.size)
         }
     }
 

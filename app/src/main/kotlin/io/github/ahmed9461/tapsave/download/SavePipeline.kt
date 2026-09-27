@@ -19,27 +19,30 @@ fun interface SaveRunner {
 class SavePipeline(
     private val context: Context,
     private val http: HttpTransfer = HttpTransfer(),
-    private val resolver: ReelResolver = InstagramPublicResolver(http),
+    private val resolver: ReelResolver = InstagramPublicResolver(http) { io.github.ahmed9461.tapsave.session.InstagramSession.cookies(context) },
 ) : SaveRunner {
     override fun save(target: SharedTarget, cancellation: TransferCancellation, progress: (Long, Long?) -> Unit): Uri {
-        val video = resolver.resolve(target, cancellation)
-        cancellation.check()
-        return http.get(video.url, NetworkPolicy::media, cancellation).use { response ->
-            if (response.type !in setOf("video/mp4", "application/octet-stream")) throw SaveFailure(SaveFailure.Reason.UNSUPPORTED)
-            if ((response.length ?: 0) > MediaStoreVideoWriter.MAX_BYTES) throw SaveFailure(SaveFailure.Reason.TOO_LARGE)
-            progress(0, response.length)
+        repeat(2) { attempt ->
+            val video = resolver.resolve(target, cancellation)
+            cancellation.check()
             try {
-                MediaStoreVideoWriter(context).write(
-                    mediaName(target), response.input, response.length,
-                    cancelled = { cancellation.check(); false },
-                    onProgress = { progress(it, response.length) },
-                    expectsAudio = video.expectsAudio,
-                )
-            } catch (failure: Exception) {
+                return http.get(video.url, NetworkPolicy::media, cancellation, media = true).use { response ->
+                    if (response.type !in setOf("video/mp4", "application/octet-stream")) throw SaveFailure(SaveFailure.Reason.EXTRACTOR_INCOMPATIBLE, "media")
+                    if ((response.length ?: 0) > MediaStoreVideoWriter.MAX_BYTES) throw SaveFailure(SaveFailure.Reason.TOO_LARGE, "media")
+                    progress(0, response.length)
+                    MediaStoreVideoWriter(context).write(
+                        mediaName(target), response.input, response.length,
+                        cancelled = { cancellation.check(); false },
+                        onProgress = { progress(it, response.length) }, expectsAudio = video.expectsAudio,
+                    )
+                }
+            } catch (failure: SaveFailure) {
                 cancellation.check()
-                throw failure
+                if (failure.reason != SaveFailure.Reason.EXPIRED_URL || attempt == 1) throw SaveFailure(failure.reason, "media", failure.status)
+                // Only an expired CDN URL gets one fresh resolution. Never retry a rate limit/restriction.
             }
         }
+        throw SaveFailure(SaveFailure.Reason.EXPIRED_URL, "media")
     }
 }
 

@@ -5,8 +5,16 @@ import re
 import shutil
 import subprocess
 
+# Do not replace an owner's Instagram installation. This package exists only on an empty emulator.
+if subprocess.check_output(["adb", "shell", "getprop", "ro.kernel.qemu"], text=True).strip() != "1":
+    raise SystemExit("Device tests require a disposable emulator")
+if "package:" in subprocess.check_output(["adb", "shell", "pm", "path", "com.instagram.android"], text=True):
+    raise SystemExit("Refusing to replace an existing Instagram package")
+subprocess.run(["./gradlew", "--no-daemon", ":instagram-fixture:assembleDebug"], check=True)
+subprocess.run(["adb", "install", "instagram-fixture/build/outputs/apk/debug/instagram-fixture-debug.apk"], check=True)
 base = ["./gradlew", "--no-daemon", ":app:connectedDebugAndroidTest"]
 subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.LiveNetwork"], check=True)
+subprocess.run(["adb", "uninstall", "com.instagram.android"], check=True)
 subprocess.run(["python3", "scripts/summarize_checks.py"], check=True)
 live = os.environ.get("LIVE_REEL", "")
 if live and os.environ.get("API_LEVEL") == "36":

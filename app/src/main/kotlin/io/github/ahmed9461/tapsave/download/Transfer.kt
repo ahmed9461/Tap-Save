@@ -8,8 +8,8 @@ import java.net.URI
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
-class SaveFailure(val reason: Reason) : IOException(reason.name) {
-    enum class Reason { UNAVAILABLE, RESTRICTED, UNSUPPORTED, NETWORK, TOO_LARGE, STORAGE, INTERRUPTED }
+class SaveFailure(val reason: Reason, val stage: String = "", val status: Int? = null) : IOException(reason.name) {
+    enum class Reason { UNAVAILABLE, RESTRICTED, UNSUPPORTED, NETWORK, TOO_LARGE, STORAGE, INTERRUPTED, AUTH_REQUIRED, RATE_LIMITED, METADATA_UNAVAILABLE, EXTRACTOR_INCOMPATIBLE, EXPIRED_URL }
 }
 
 class TransferCancellation {
@@ -36,12 +36,12 @@ object NetworkPolicy {
     private fun base(uri: URI) = uri.scheme == "https" && uri.host != null && uri.rawUserInfo == null && uri.port == -1 && uri.rawFragment == null
 }
 
-/** No cookies, credentials, hidden retries, private endpoints or redirects outside the selected policy. */
+/** Bounded redirects; optional local session cookies only on the exact Instagram origin, never on media. */
 class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL().openConnection() as HttpURLConnection }) {
     class Response(val uri: URI, val connection: HttpURLConnection, private val cancellation: TransferCancellation) : Closeable {
         val length = connection.contentLengthLong.takeIf { it > 0 }
         val type = connection.contentType.orEmpty().substringBefore(';').lowercase()
-        val input: InputStream get() = object : java.io.FilterInputStream(connection.inputStream) {
+        val input: InputStream get() = object : java.io.FilterInputStream(try { connection.inputStream } catch (_: IOException) { cancellation.check(); throw SaveFailure(SaveFailure.Reason.NETWORK) }) {
             override fun read(): Int = networkRead { super.read() }
             override fun read(buffer: ByteArray, offset: Int, length: Int): Int = networkRead { super.read(buffer, offset, length) }
             private fun networkRead(read: () -> Int): Int = try { read() } catch (_: IOException) {
@@ -52,11 +52,14 @@ class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL(
         override fun close() { cancellation.detach(connection); connection.disconnect() }
     }
 
-    fun get(url: String, allowed: (URI) -> Boolean, cancellation: TransferCancellation): Response {
+    fun get(url: String, allowed: (URI) -> Boolean, cancellation: TransferCancellation, cookie: String? = null, media: Boolean = false): Response {
         var uri = try { URI(url) } catch (_: Exception) { throw SaveFailure(SaveFailure.Reason.UNSUPPORTED) }
         repeat(5) {
             cancellation.check()
-            if (!allowed(uri)) throw SaveFailure(SaveFailure.Reason.RESTRICTED)
+            if (!allowed(uri)) {
+                if (uri.host in setOf("www.instagram.com", "instagram.com") && uri.path.startsWith("/accounts/login")) throw SaveFailure(SaveFailure.Reason.AUTH_REQUIRED)
+                throw SaveFailure(SaveFailure.Reason.RESTRICTED)
+            }
             val connection = connect(uri)
             var handedOff = false
             try {
@@ -64,7 +67,8 @@ class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL(
                 connection.connectTimeout = 15_000
                 connection.readTimeout = 15_000
                 connection.useCaches = false
-                connection.setRequestProperty("User-Agent", "TapSave/0.2 (Android; public media save)")
+                connection.setRequestProperty("User-Agent", "TapSave/0.3 (Android; user-requested media save)")
+                if (!media && cookie != null && io.github.ahmed9461.tapsave.session.InstagramSession.allowsCookie(uri)) connection.setRequestProperty("Cookie", cookie)
                 connection.setRequestProperty("Accept-Encoding", "identity")
                 cancellation.attach(connection)
                 when (connection.responseCode) {
@@ -73,8 +77,10 @@ class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL(
                         val location = connection.getHeaderField("Location") ?: throw SaveFailure(SaveFailure.Reason.NETWORK)
                         uri = uri.resolve(location)
                     }
-                    401, 403 -> throw SaveFailure(SaveFailure.Reason.RESTRICTED)
-                    404, 410 -> throw SaveFailure(SaveFailure.Reason.UNAVAILABLE)
+                    401 -> throw SaveFailure(if (media) SaveFailure.Reason.EXPIRED_URL else SaveFailure.Reason.AUTH_REQUIRED, status = 401)
+                    403 -> throw SaveFailure(if (media) SaveFailure.Reason.EXPIRED_URL else SaveFailure.Reason.AUTH_REQUIRED, status = 403)
+                    404, 410 -> throw SaveFailure(if (media) SaveFailure.Reason.EXPIRED_URL else SaveFailure.Reason.UNAVAILABLE, status = connection.responseCode)
+                    429 -> throw SaveFailure(SaveFailure.Reason.RATE_LIMITED, status = 429)
                     else -> throw SaveFailure(SaveFailure.Reason.NETWORK)
                 }
             } catch (failure: IOException) {
@@ -87,7 +93,7 @@ class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL(
         throw SaveFailure(SaveFailure.Reason.NETWORK)
     }
 
-    fun page(url: String, cancellation: TransferCancellation): Pair<String, String> = get(url, NetworkPolicy::page, cancellation).use { response ->
+    fun page(url: String, cancellation: TransferCancellation, cookie: String? = null): Pair<String, String> = get(url, NetworkPolicy::page, cancellation, cookie).use { response ->
         if (response.type !in setOf("text/html", "application/xhtml+xml")) throw SaveFailure(SaveFailure.Reason.UNSUPPORTED)
         val max = 3 * 1024 * 1024
         if ((response.length ?: 0) > max) throw SaveFailure(SaveFailure.Reason.TOO_LARGE)
