@@ -57,7 +57,7 @@ Instagram Share → Tap Save reaches a normalized target reliably.
 
 ## Step 4 — Current Reel identification research
 
-**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. An opt-in Instagram-only semantic Share → Copy link adapter is now implemented after owner authorization. It is bounded, inactive between taps, has Arabic/English labels, and uses a focused fresh-clipboard handoff. A disposable fixture tests Android mechanics; real Instagram 448.0.0.52.84 Arabic acceptance remains open (D-015).
+**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. An opt-in Instagram-only semantic Share → Copy link adapter is now implemented after owner authorization. It is bounded, inactive between taps, has Arabic/English labels, and uses a focused fresh-clipboard handoff. The actual floating-button-to-MediaStore path passed on an Arabic disposable fixture across API 29/35/36 at `411ee70`; English acquisition also passed. This tests Android mechanics; real Instagram 448.0.0.52.84 Arabic acceptance remains open (D-015).
 
 Test approaches in order from least invasive to most invasive.
 
@@ -79,7 +79,7 @@ Choose a primary strategy plus fallback strategy and record the choice in `docs/
 
 ## Step 5 — Media resolution/download spike
 
-**Status: Development-build exit met; owner reports some phone saves, broader reliability remains open.** At `03a5d1f`, the real Share activity/service resolved `DGOSAUyC903`, downloaded it anonymously and published a playable video/audio file on API 36 (live CI `36277332176`). The test verified metadata and decoded a frame. Native public-page/embed parsing required support for JSON strings inside ServerJS wrappers; no JavaScript runtime or heavy engine was needed (D-014). This proves one public sample, not broad compatibility. The owner subsequently confirmed some public Reel saves and requested reliability/direct-current-Reel work; that continuation is authorized. Version 0.3 adds optional session fallback, variant selection, short-link normalization and specific diagnostics (D-016).
+**Status: Development-build exit met; owner reports some phone saves, broader reliability remains open.** At `03a5d1f`, the real Share activity/service resolved `DGOSAUyC903`, downloaded it anonymously and published a playable video/audio file on API 36 (live CI `36277332176`). The test verified metadata and decoded a frame. Native public-page/embed parsing required support for JSON strings inside ServerJS wrappers; no JavaScript runtime or heavy engine was needed (D-014). This proved one public sample, not broad compatibility. The owner subsequently confirmed some public Reel saves and requested reliability/direct-current-Reel work; that continuation is authorized. Version 0.3 adds public page/embed/post-permalink strategies, optional session fallback, variant selection, short-link normalization and specific diagnostics (D-016). At `411ee70`, live API 36 CI `36354557958` saved three public Reels anonymously with video/audio and frame verification; authenticated-account acceptance remains open.
 
 Compare practical on-device options, including a lightweight direct resolver and, only if justified, an embedded maintained downloader engine.
 
@@ -117,7 +117,7 @@ A requested download is robust across ordinary activity lifecycle changes and ap
 
 ## Step 7 — Review
 
-**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph and failure UX. Final application/test code at `03a5d1f` passed build/lint, 16 JVM tests and 26 instrumentation tests per API 29/35/36 job (CI `36277332969`), plus one separate live public-Reel save test on API 36 (CI `36277332176`). No production dependency added. Real-device save/overlay acceptance, real Instagram acquisition/session acceptance and battery measurements remain outstanding. Short-link resolution is implemented with controlled redirect tests. Plan stays active; no new plan created.
+**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph and failure UX. Final 0.3 application/test code at `411ee70` passed build/strict lint, 18 JVM tests and 39 instrumentation tests per API 29/35/36 job (CI `36354556280`), plus three separate live public-Reel save tests on API 36 (CI `36354557958`). No production dependency added. Real-device save/overlay acceptance, real Instagram acquisition/session acceptance and battery measurements remain outstanding. Short-link resolution is implemented with controlled redirect tests. Plan stays active; no new plan created.
 
 Before closing this plan:
 
@@ -141,5 +141,5 @@ Before closing this plan:
 ### 2026-09-28 continuation gate
 
 - Implemented: explicit opt-in semantic current-Reel adapter, public-first/session-second native resolution, isolated actual Instagram login page and Disconnect/Clear, best available progressive variant, expired-link refresh, short-link normalization and safe diagnostics.
-- In progress: build/lint and API 29/35/36 fixtures, separate live Share saves for `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa`. Record final evidence before marking this continuation verified.
+- Verified at `411ee70`: build/strict lint; 18 JVM + 39 instrumentation tests per API 29/35/36, zero failures/errors/skips; three separate real anonymous Share saves for `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa`. Exact APK/hash and CI links are recorded in `PROJECT_STATUS.md` and `docs/TECHNICAL_SPIKE.md`. Direct current-Reel evidence uses a controlled Android UI fixture, not the production Instagram app.
 - Still required on owner device: production Arabic node tree, successive-Reel correctness, login and session fallback, original audio/quality, Samsung storage UX and OEM interruption. No new plan.
