@@ -22,6 +22,8 @@ class LiveReelSaveTest {
     @Test fun ownerReelShareSavesPlayableVideoAndAudio() = saveReel(InstrumentationRegistry.getArguments().getString("liveReel")!!)
     @Test fun secondPublicReelShareSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/Cop84x6u7CP/")
 
+    @Test fun modernPermalinkPublicReelSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/CDUMkliABpa/")
+
     private fun saveReel(raw: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
@@ -45,6 +47,7 @@ class LiveReelSaveTest {
                 }.joinToString("; ")
             } else ""
             assertEquals("Public resolution failed: ${state.failure}; $diagnostics", SavePhase.SAVED, state.phase)
+            assertTrue("Expected public strategy: ${state.diagnostic}", state.diagnostic?.startsWith("public-") == true)
             val uri = state.uri!!
             try {
                 assertEquals(uri, reconcileMedia(context, target))

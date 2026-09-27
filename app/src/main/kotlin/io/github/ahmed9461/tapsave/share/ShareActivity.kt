@@ -51,6 +51,7 @@ class ShareActivity : ComponentActivity() {
                         if (status != null && (status.target.key == input.key || status.requestedUrl == input.canonicalUrl)) {
                             Text(saveMessage(this@ShareActivity, status))
                             if (status.phase == SavePhase.FAILED) Text(listOfNotNull(status.failure?.name, status.diagnostic).joinToString(" · "))
+                            if (status.phase == SavePhase.SAVED && !status.diagnostic.isNullOrBlank()) Text(if (status.diagnostic.startsWith("session-")) "Instagram session used" else "Saved from public metadata")
                             if (status.active) {
                                 val total = status.total
                                 if (total != null) LinearProgressIndicator(progress = { (status.bytes.toFloat() / total).coerceIn(0f, 1f) })

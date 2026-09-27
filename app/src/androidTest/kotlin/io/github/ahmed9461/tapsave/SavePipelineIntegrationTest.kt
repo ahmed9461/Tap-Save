@@ -84,7 +84,7 @@ class SavePipelineIntegrationTest {
             assertEquals(SaveFailure.Reason.AUTH_REQUIRED, assertThrows(SaveFailure::class.java) {
                 SavePipeline(context, server.http).save(target, TransferCancellation()) { _, _ -> }
             }.reason)
-            assertEquals(2, server.paths.size)
+            assertEquals(3, server.paths.size)
         }
     }
 

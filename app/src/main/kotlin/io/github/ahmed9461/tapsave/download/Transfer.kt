@@ -29,7 +29,7 @@ class TransferCancellation {
 
 object NetworkPolicy {
     fun page(uri: URI): Boolean = base(uri) && uri.host.lowercase() in setOf("instagram.com", "www.instagram.com") &&
-        Regex("/(?:reels?/[A-Za-z0-9_-]{1,64}(?:/embed)?|share/reel/[A-Za-z0-9_-]{1,64})/?").matches(uri.path)
+        Regex("/(?:(?:p|reels?)/[A-Za-z0-9_-]{1,64}(?:/embed)?|share/reel/[A-Za-z0-9_-]{1,64})/?").matches(uri.path)
     fun media(uri: URI): Boolean = base(uri) && listOf("cdninstagram.com", "fbcdn.net").any {
         uri.host.lowercase() == it || uri.host.lowercase().endsWith(".$it")
     }
@@ -70,6 +70,8 @@ class HttpTransfer(private val connect: (URI) -> HttpURLConnection = { it.toURL(
                 connection.setRequestProperty("User-Agent", "TapSave/0.3 (Android; user-requested media save)")
                 if (!media && cookie != null && io.github.ahmed9461.tapsave.session.InstagramSession.allowsCookie(uri)) connection.setRequestProperty("Cookie", cookie)
                 connection.setRequestProperty("Accept-Encoding", "identity")
+                connection.setRequestProperty("Accept", if (media) "video/mp4,application/octet-stream;q=0.9,*/*;q=0.8" else "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                if (media) connection.setRequestProperty("Referer", "https://www.instagram.com/")
                 cancellation.attach(connection)
                 when (connection.responseCode) {
                     200 -> { handedOff = true; return Response(uri, connection, cancellation) }

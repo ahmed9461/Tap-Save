@@ -126,8 +126,8 @@ The extractor payload adds 3,170,726 bytes within the library. These are AAR/pay
 ### Multiple public probes
 
 - `DGOSAUyC903`: current anonymous embed still exposes matching non-copyright-blocked media.
-- `Cop84x6u7CP`: independent Reel from the maintained extractor's public URL fixtures; current anonymous embed exposes matching non-copyright-blocked media. Desktop download: **2,424,478 bytes**, SHA-256 `3fa42f09cb47b6d41ba4a9a797eb27385ca8b2ccab6d90a43367a9041d8581bb`; FFprobe: **H.264 720×1280, AAC, 19.108617 seconds**. Full FFmpeg decode passed. This will also run through the separate real Android Share gate.
-- `Dc_WBLAuR7M`, `CDUMkliABpa`, `CWqAgUZgCku`: anonymous embed and alternate public post-permalink probes returned HTML without media fields here. They are recorded as unavailable metadata in this environment; no claim that these Reels are private or universally unavailable. The alternate permalink route supplied no benefit and was not added as another request in the app.
+- `Cop84x6u7CP`: independent Reel from the maintained extractor's public URL fixtures; current anonymous embed exposes matching non-copyright-blocked media. Desktop download: **2,424,478 bytes**, SHA-256 `3fa42f09cb47b6d41ba4a9a797eb27385ca8b2ccab6d90a43367a9041d8581bb`; FFprobe: **H.264 720×1280, AAC, 19.108617 seconds**. Full FFmpeg decode passed. This is included in the separate real Android Share gate.
+- `Dc_WBLAuR7M`, `CDUMkliABpa`, `CWqAgUZgCku`: anonymous embed and alternate public post-permalink probes returned HTML without media fields here. They are recorded as unavailable metadata in this environment; no claim that these Reels are private or universally unavailable. A follow-up differential probe below identified the representation difference for one of these samples.
 - No owner-authenticated test has occurred. Login/session fallback is optional and awaiting real account acceptance. Raw HTML, signed CDN URLs, media captures and inspected AARs are not committed.
 
 ### Owner test sequence for 0.3
@@ -138,3 +138,9 @@ The extractor payload adds 3,170,726 bytes within the library. These are AAR/pay
 4. Disconnect/Clear, verify disabled status, and retry anonymously. Test successive taps/cancellation, lock/unlock, navigation away, permission revocation and notification Stop without an orphan overlay or pending file.
 
 The shipping APK does not include the separate `com.instagram.android` UI fixture. Its Arabic/English controls test platform mechanics and fresh/stale clipboard handling only; they do not validate Instagram's actual node tree.
+
+### Follow-up: maintained engine differential probe
+
+PyPI stable `yt-dlp 2026.8.19` (3,185,533-byte wheel, kept outside the repository) resolved `DGOSAUyC903` and `CDUMkliABpa` anonymously; `Dc_WBLAuR7M` still failed. No curl-cffi/TLS impersonation was available, and explicitly disabling it retained success. The successful path used the public `/p/<code>` HTML document. The native probe originally omitted an explicit HTML Accept header: adding **Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8** alone exposed matching `code`, `video_versions` and `has_audio` in its JSON scripts, with Tap Save's own User-Agent and no cookies, bootstrap/API requests, browser impersonation or JavaScript execution.
+
+The native chain now includes that public permalink after page/embed and before any optional session. Existing bounded JSON traversal handles the observed modern prefetch structure. This reproduces the engine's useful public result without its runtime. Three live Android samples now cover the two embed candidates plus this modern metadata case. Desktop first progressive variant for `CDUMkliABpa`: **3,257,414 bytes**, SHA-256 `7e98c20ed25d8dcd68c81b84e06fb2bad8754abfe233296726423e7f6c257aee`, **H.264 720×1280, AAC, 13.546667 seconds**, full decode passed. The engine additionally lists separate DASH variants; those remain outside the native combined-MP4 scope. The success UI reports whether public metadata or an Instagram session was used.

@@ -12,7 +12,6 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Button
 import androidx.core.content.edit
-import io.github.ahmed9461.tapsave.R
 import kotlin.math.roundToInt
 
 /** One small, non-focusable native window. All calls are on the main thread. */
@@ -48,6 +47,8 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, pri
         if (button != null) return
         clampPosition()
         val view = Button(context).apply {
+            setPadding(0, 0, 0, 0)
+            minWidth = 0; minHeight = 0; maxLines = 1
             text = glyph
             contentDescription = description
             setOnClickListener {

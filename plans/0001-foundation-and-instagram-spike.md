@@ -141,5 +141,5 @@ Before closing this plan:
 ### 2026-09-28 continuation gate
 
 - Implemented: explicit opt-in semantic current-Reel adapter, public-first/session-second native resolution, isolated actual Instagram login page and Disconnect/Clear, best available progressive variant, expired-link refresh, short-link normalization and safe diagnostics.
-- In progress: build/lint and API 29/35/36 fixtures, separate live Share saves for `DGOSAUyC903` and `Cop84x6u7CP`. Record final evidence before marking this continuation verified.
+- In progress: build/lint and API 29/35/36 fixtures, separate live Share saves for `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa`. Record final evidence before marking this continuation verified.
 - Still required on owner device: production Arabic node tree, successive-Reel correctness, login and session fallback, original audio/quality, Samsung storage UX and OEM interruption. No new plan.

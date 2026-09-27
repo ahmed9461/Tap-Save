@@ -82,3 +82,9 @@
 - Added optional isolated real Instagram login/session, public-first ordered fallbacks, cookie-origin confinement/clear, short-link normalization, highest progressive variant selection, bounded expired-media refresh and specific safe diagnostics.
 - Compared native implementation against publisher wrapper/FFmpeg AAR size and initializer/subprocess maintenance. No production dependency added. Added disposable Arabic/English UI fixture and controlled resolver/session/lifecycle regressions; build/emulator validation is running.
 - Independently resolved/downloaded/fully decoded a second public Reel, `Cop84x6u7CP`, on desktop; added it to the Android live gate with `DGOSAUyC903`. Three other anonymous sample documents exposed no downloadable metadata. Actual Instagram UI and owner-account login acceptance remain open.
+
+### Verification checkpoint and native resolver refinement
+
+At `82f650b`, CI `36352369407` passed build/strict lint, 18 JVM and 37 instrumentation tests on API 29/35/36. Arabic/English semantic acquisition, stale-link rejection, ambiguity/other-app rejection, real native transfer/storage after acquisition, optional session broker/clear and resolver regressions passed. This is synthetic UI evidence, not production Instagram acceptance.
+
+A maintained yt-dlp desktop comparison resolved an additional public sample (`CDUMkliABpa`). The minimal native reproduction was an explicit HTML Accept header and public post permalink; no login, API query or TLS impersonation was needed. Added that third public strategy before session use, modern prefetch-format regression, public/session success indication and a third live Android sample. Strengthened the UI gate to press the actual floating button through an accessibility action, then verify the saved bytes; this final source revision is awaiting rerun.

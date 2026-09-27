@@ -20,11 +20,13 @@ class SavePipeline(
     private val context: Context,
     private val http: HttpTransfer = HttpTransfer(),
     private val resolver: ReelResolver = InstagramPublicResolver(http) { io.github.ahmed9461.tapsave.session.InstagramSession.cookies(context) },
+    private val onResolved: (String) -> Unit = {},
 ) : SaveRunner {
     override fun save(target: SharedTarget, cancellation: TransferCancellation, progress: (Long, Long?) -> Unit): Uri {
         repeat(2) { attempt ->
             val video = resolver.resolve(target, cancellation)
             cancellation.check()
+            onResolved(video.strategy)
             try {
                 return http.get(video.url, NetworkPolicy::media, cancellation, media = true).use { response ->
                     if (response.type !in setOf("video/mp4", "application/octet-stream")) throw SaveFailure(SaveFailure.Reason.EXTRACTOR_INCOMPATIBLE, "media")

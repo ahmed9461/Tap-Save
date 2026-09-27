@@ -24,4 +24,4 @@
 
 ## Next milestone
 
-Complete the 0.3 build/lint/emulator and two-sample live gates, then test on Samsung SM-S908U1 / Android 16, Instagram 448.0.0.52.84 in Arabic: direct ↓ on successive Reels, independent Share, public resolution, optional login fallback, quality/audio, cancellation/success/errors and Disconnect. Do not equate synthetic accessibility controls with Instagram compatibility. Plan 0001 remains active.
+Complete the 0.3 build/lint/emulator and three-sample live gates, then test on Samsung SM-S908U1 / Android 16, Instagram 448.0.0.52.84 in Arabic: direct ↓ on successive Reels, independent Share, public resolution, optional login fallback, quality/audio, cancellation/success/errors and Disconnect. Do not equate synthetic accessibility controls with Instagram compatibility. Plan 0001 remains active.

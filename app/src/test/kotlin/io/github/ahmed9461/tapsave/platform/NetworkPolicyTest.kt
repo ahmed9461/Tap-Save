@@ -8,6 +8,7 @@ import org.junit.Test
 
 class NetworkPolicyTest {
     @Test fun publicDocumentsOnly() {
+        assertTrue(NetworkPolicy.page(URI("https://www.instagram.com/p/Ab_1-")))
         assertTrue(NetworkPolicy.page(URI("https://www.instagram.com/reel/Ab_1-/embed/")))
         listOf("https://www.instagram.com/accounts/login/", "https://www.instagram.com/api/v1/media/1/info/", "https://instagram.com.evil.test/reel/a/", "http://instagram.com/reel/a/", "https://user@instagram.com/reel/a/", "https://instagram.com:443/reel/a/", "https://127.0.0.1/reel/a/")
             .forEach { assertFalse(it, NetworkPolicy.page(URI(it))) }

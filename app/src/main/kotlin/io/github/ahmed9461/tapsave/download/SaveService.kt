@@ -71,7 +71,7 @@ class SaveService : Service() {
                 journal.write(resolved)
                 signal.check()
                 val existing = reconcileMedia(this, target)
-                val uri = existing ?: (testFactory?.invoke(this) ?: SavePipeline(this)).save(target, signal) { bytes, total ->
+                val uri = existing ?: (testFactory?.invoke(this) ?: SavePipeline(this, onResolved = { strategy -> resolved = resolved.copy(diagnostic = strategy) })).save(target, signal) { bytes, total ->
                     signal.check()
                     val now = SystemClock.elapsedRealtime()
                     if (bytes == 0L || now - lastProgressTime >= 200) {

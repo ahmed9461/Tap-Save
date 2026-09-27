@@ -20,12 +20,13 @@ class ResolverStrategyTest {
     }
     @Test fun publicFailuresThenSessionUseBoundedOrderedChain() {
         var requests = 0
-        HttpFixture { HttpFixture.Reply("text/html", (if (++requests == 3) publicEmbed("Strategy") else "<html>shell</html>").toByteArray()) }.use {
+        HttpFixture { HttpFixture.Reply("text/html", (if (++requests == 4) publicEmbed("Strategy") else "<html>shell</html>").toByteArray()) }.use {
             val result = InstagramPublicResolver(it.http) { "sessionid=synthetic_fixture" }.resolve(target, TransferCancellation())
             assertEquals("session-page", result.strategy)
-            assertEquals(listOf("/reel/Strategy/", "/reel/Strategy/embed/", "/reel/Strategy/"), it.paths)
+            assertEquals(listOf("/reel/Strategy/", "/reel/Strategy/embed/", "/p/Strategy", "/reel/Strategy/"), it.paths)
             assertFalse(it.headers[0].containsKey("cookie")); assertFalse(it.headers[1].containsKey("cookie"))
-            assertEquals("sessionid=synthetic_fixture", it.headers[2]["cookie"])
+            assertFalse(it.headers[2].containsKey("cookie"))
+            assertEquals("sessionid=synthetic_fixture", it.headers[3]["cookie"])
         }
     }
     @Test fun rateLimitsAndRestrictionsNeverEscalateToSession() {
@@ -75,6 +76,14 @@ class ResolverStrategyTest {
         HttpFixture { HttpFixture.Reply("video/mp4", byteArrayOf(), status = 410) }.use {
             val error = assertThrows(SaveFailure::class.java) { SavePipeline(instrumentation.targetContext, it.http, ReelResolver { _, _ -> resolutions++; ResolvedVideo("https://video.cdninstagram.com/media.mp4") }).save(target, TransferCancellation()) { _, _ -> } }
             assertEquals(SaveFailure.Reason.EXPIRED_URL, error.reason); assertEquals(2, resolutions)
+        }
+    }
+    @Test fun modernPublicPermalinkFallbackUsesExplicitHtmlAcceptAndMatchingCode() {
+        val html = """<script type="application/json" data-sjs>{"require":[{"__bbox":{"result":{"data":{"xig_polaris_media":{"if_not_gated_logged_out":{"code":"Strategy","has_audio":true,"original_width":720,"original_height":1280,"video_versions":[{"type":101,"url":"https://video.cdninstagram.com/native.mp4"}]}}}}}}]}</script>"""
+        HttpFixture { path -> HttpFixture.Reply("text/html", (if (path == "/p/Strategy") html else "<html>shell</html>").toByteArray()) }.use {
+            val result = InstagramPublicResolver(it.http) { throw AssertionError("Public permalink must precede session") }.resolve(target, TransferCancellation())
+            assertEquals("public-post", result.strategy); assertTrue(result.url.endsWith("native.mp4")); assertEquals(true, result.expectsAudio)
+            assertTrue(it.headers.all { headers -> headers["accept"]!!.startsWith("text/html,application/xhtml+xml") })
         }
     }
     @Test fun isolatedSessionBrokerStartsClearsAndStaysOptional() {

@@ -25,11 +25,11 @@ class InstagramPublicResolver(
         var last = SaveFailure(SaveFailure.Reason.METADATA_UNAVAILABLE)
         var authFailure: SaveFailure? = null
         fun attempt(cookie: String?, session: Boolean): ResolvedVideo? {
-            for ((suffix, name) in listOf("" to "page", "embed/" to "embed")) {
+            for ((url, name) in listOf(target.canonicalUrl to "page", "${target.canonicalUrl}embed/" to "embed", "https://www.instagram.com/p/$code" to "post")) {
                 cancellation.check()
                 val stage = (if (session) "session-" else "public-") + name
                 try {
-                    val (_, page) = http.page(target.canonicalUrl + suffix, cancellation, cookie)
+                    val (_, page) = http.page(url, cancellation, cookie)
                     PublicReelMetadata.parse(page, code)?.let { return it.copy(strategy = stage) }
                     last = SaveFailure(SaveFailure.Reason.METADATA_UNAVAILABLE, stage)
                 } catch (failure: SaveFailure) {
