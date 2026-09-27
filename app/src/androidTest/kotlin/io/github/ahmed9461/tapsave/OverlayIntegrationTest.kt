@@ -36,7 +36,7 @@ class OverlayIntegrationTest {
 
     @After fun cleanup() {
         context.stopService(Intent(context, OverlayService::class.java))
-        waitUntil { notifications.activeNotifications.none { it.id == 1 } && Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
+        waitUntil { notifications.activeNotifications.none { it.id == 1 && it.tag == null } && Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
         appOp("SYSTEM_ALERT_WINDOW", "default")
         appOp("GET_USAGE_STATS", "default")
     }
@@ -70,9 +70,9 @@ class OverlayIntegrationTest {
         grantSessionPermissions()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.startForegroundService(Intent(it, OverlayService::class.java)) }
-            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.notification.actions?.isNotEmpty() == true } }
+            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.tag == null && it.notification.actions?.isNotEmpty() == true } }
             appOp("GET_USAGE_STATS", "deny")
-            waitUntil { notifications.activeNotifications.none { it.id == 1 } }
+            waitUntil { notifications.activeNotifications.none { it.id == 1 && it.tag == null } }
         }
     }
 
@@ -80,9 +80,9 @@ class OverlayIntegrationTest {
         grantSessionPermissions()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.startForegroundService(Intent(it, OverlayService::class.java)) }
-            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.notification.actions?.isNotEmpty() == true } }
+            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.tag == null && it.notification.actions?.isNotEmpty() == true } }
             context.stopService(Intent(context, OverlayService::class.java))
-            waitUntil { notifications.activeNotifications.none { it.id == 1 } }
+            waitUntil { notifications.activeNotifications.none { it.id == 1 && it.tag == null } }
         }
     }
 
@@ -96,7 +96,7 @@ class OverlayIntegrationTest {
                 appOp("GET_USAGE_STATS", "deny")
             }
             SystemClock.sleep(10_000) // Observe the Android foreground-start deadline, not just an early empty notification list.
-            waitUntil { notifications.activeNotifications.none { it.id == 1 } && Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
+            waitUntil { notifications.activeNotifications.none { it.id == 1 && it.tag == null } && Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
         }
     }
 
@@ -104,10 +104,10 @@ class OverlayIntegrationTest {
         grantSessionPermissions()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.startForegroundService(Intent(it, OverlayService::class.java)) }
-            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.notification.actions?.isNotEmpty() == true } }
-            val notification = notifications.activeNotifications.single { it.id == 1 }.notification
+            waitUntil { notifications.activeNotifications.any { it.id == 1 && it.tag == null && it.notification.actions?.isNotEmpty() == true } }
+            val notification = notifications.activeNotifications.single { it.id == 1 && it.tag == null }.notification
             notification.actions.single().actionIntent.send()
-            waitUntil { notifications.activeNotifications.none { it.id == 1 } }
+            waitUntil { notifications.activeNotifications.none { it.id == 1 && it.tag == null } }
             waitUntil { Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } }
         }
     }

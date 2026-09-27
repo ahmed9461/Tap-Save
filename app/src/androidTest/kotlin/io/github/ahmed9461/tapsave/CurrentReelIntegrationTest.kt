@@ -38,7 +38,7 @@ class CurrentReelIntegrationTest {
     @After fun cleanup() {
         instrumentation.runOnMainSync { InstagramAccessibilityService.connected?.onInterrupt() }
         context.stopService(Intent(context, OverlayService::class.java))
-        waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } && context.getSystemService(android.app.NotificationManager::class.java).activeNotifications.none { it.id == 1 } }
+        waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } && context.getSystemService(android.app.NotificationManager::class.java).activeNotifications.none { it.id == 1 && it.tag == null } }
         context.stopService(Intent(context, SaveService::class.java))
         waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-transfer" && it.isAlive } }
         SaveUiState.current?.uri?.let { context.contentResolver.delete(it, null, null) }
@@ -46,13 +46,18 @@ class CurrentReelIntegrationTest {
         server?.close()
         shell("settings delete secure enabled_accessibility_services")
         shell("settings put secure accessibility_enabled 0")
+        waitForSave { InstagramAccessibilityService.connected == null }
         shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW default")
         shell("appops set ${context.packageName} GET_USAGE_STATS default")
     }
     private fun launch(extra: String = "") {
         shell("am force-stop com.instagram.android")
         shell("am start -W -n com.instagram.android/.FixtureActivity $extra")
-        SystemClock.sleep(500)
+        waitForSave {
+            val root = automation.rootInActiveWindow
+            root?.packageName?.toString() == "com.instagram.android" &&
+                root.findAccessibilityNodeInfosByText("TEST FIXTURE").isNotEmpty()
+        }
     }
     private fun acquire(): Result<String> {
         val done = CountDownLatch(1)
@@ -79,11 +84,13 @@ class CurrentReelIntegrationTest {
             launch("--ez arabic true")
             // Usage-context updates can detach an overlay between querying its node and
             // invoking it. Re-query stale nodes; stop as soon as the app accepts the tap.
-            waitForSave {
+            try { waitForSave {
                 if (InstagramAccessibilityService.pending != null || SaveUiState.current != null) true
                 else automation.windows.mapNotNull { it.root }.flatMap { it.findAccessibilityNodeInfosByText("↓") }
                     .singleOrNull { it.packageName?.toString() == context.packageName }
                     ?.let { it.refresh() && it.performAction(AccessibilityNodeInfo.ACTION_CLICK) } == true
+            } } catch (failure: AssertionError) {
+                throw AssertionError("Overlay tap unavailable: windows=" + automation.windows.joinToString { "${it.type}/${it.isFocused}/${it.root?.packageName}" } + "; connected=${InstagramAccessibilityService.connected != null}", failure)
             }
             waitForSave(30_000) { SaveUiState.current?.phase == SavePhase.SAVED }
         }

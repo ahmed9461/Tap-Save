@@ -8,6 +8,11 @@ import subprocess
 # Do not replace an owner's Instagram installation. This package exists only on an empty emulator.
 if subprocess.check_output(["adb", "shell", "getprop", "ro.kernel.qemu"], text=True).strip() != "1":
     raise SystemExit("Device tests require a disposable emulator")
+# Keep a UI test device awake; owner devices are never targeted by this runner.
+subprocess.run(["adb", "shell", "settings", "put", "global", "stay_on_while_plugged_in", "3"], check=True)
+subprocess.run(["adb", "shell", "settings", "put", "system", "screen_off_timeout", "1800000"], check=True)
+subprocess.run(["adb", "shell", "input", "keyevent", "KEYCODE_WAKEUP"], check=True)
+subprocess.run(["adb", "shell", "wm", "dismiss-keyguard"], check=True)
 existing = subprocess.run(["adb", "shell", "pm", "path", "com.instagram.android"], text=True, capture_output=True)
 if existing.returncode not in (0, 1):
     raise SystemExit("Could not verify the emulator package inventory")
