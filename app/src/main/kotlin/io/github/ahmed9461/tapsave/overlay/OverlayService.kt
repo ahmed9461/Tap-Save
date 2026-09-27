@@ -121,7 +121,7 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP || !canStart(this)) {
+        if (intent?.action == ACTION_STOP) {
             stopSelf()
             return START_NOT_STICKY
         }
@@ -139,7 +139,9 @@ class OverlayService : Service() {
             .build()
         val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
         startForeground(1, notification, type)
-        updatePolling()
+        // A permission can change after the caller checked it. Fulfil the foreground
+        // startup contract before stopping; otherwise Android can later kill this process.
+        if (canStart(this)) updatePolling() else stopSelf()
         return START_NOT_STICKY
     }
 

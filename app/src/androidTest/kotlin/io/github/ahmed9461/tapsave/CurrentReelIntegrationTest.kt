@@ -38,6 +38,7 @@ class CurrentReelIntegrationTest {
     @After fun cleanup() {
         instrumentation.runOnMainSync { InstagramAccessibilityService.connected?.onInterrupt() }
         context.stopService(Intent(context, OverlayService::class.java))
+        waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-context" && it.isAlive } && context.getSystemService(android.app.NotificationManager::class.java).activeNotifications.none { it.id == 1 } }
         context.stopService(Intent(context, SaveService::class.java))
         waitForSave { Thread.getAllStackTraces().keys.none { it.name == "TapSave-transfer" && it.isAlive } }
         SaveUiState.current?.uri?.let { context.contentResolver.delete(it, null, null) }
@@ -76,13 +77,14 @@ class CurrentReelIntegrationTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.startForegroundService(Intent(it, OverlayService::class.java)) }
             launch("--ez arabic true")
-            var button: AccessibilityNodeInfo? = null
+            // Usage-context updates can detach an overlay between querying its node and
+            // invoking it. Re-query stale nodes; stop as soon as the app accepts the tap.
             waitForSave {
-                button = automation.windows.mapNotNull { it.root }.flatMap { it.findAccessibilityNodeInfosByText("↓") }
+                if (InstagramAccessibilityService.pending != null || SaveUiState.current != null) true
+                else automation.windows.mapNotNull { it.root }.flatMap { it.findAccessibilityNodeInfosByText("↓") }
                     .singleOrNull { it.packageName?.toString() == context.packageName }
-                button != null
+                    ?.let { it.refresh() && it.performAction(AccessibilityNodeInfo.ACTION_CLICK) } == true
             }
-            assertTrue(button!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))
             waitForSave(30_000) { SaveUiState.current?.phase == SavePhase.SAVED }
         }
         assertEquals("https://www.instagram.com/reel/AdapterFixture/", SaveUiState.current!!.target.canonicalUrl)
