@@ -19,10 +19,12 @@ annotation class LiveNetwork
 /** Explicit workflow-dispatch gate, excluded from deterministic CI. Never downloads an arbitrary URL. */
 @LiveNetwork
 class LiveReelSaveTest {
-    @Test fun publicReelShareSavesPlayableVideoAndAudio() {
+    @Test fun ownerReelShareSavesPlayableVideoAndAudio() = saveReel(InstrumentationRegistry.getArguments().getString("liveReel")!!)
+    @Test fun secondPublicReelShareSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/Cop84x6u7CP/")
+
+    private fun saveReel(raw: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        val raw = InstrumentationRegistry.getArguments().getString("liveReel")!!
         val target = (InstagramShareParser.parse(raw) as ShareResult.Target).target
         SaveService.testFactory = null
         instrumentation.runOnMainSync { SaveUiState.current = null }
