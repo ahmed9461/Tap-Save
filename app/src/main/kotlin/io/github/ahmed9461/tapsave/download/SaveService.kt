@@ -18,7 +18,6 @@ import android.os.SystemClock
 import io.github.ahmed9461.tapsave.R
 import io.github.ahmed9461.tapsave.platform.pendingTarget
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramLinkNormalizer
-import io.github.ahmed9461.tapsave.platform.ShareResult
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramShareParser
 import io.github.ahmed9461.tapsave.share.ShareActivity
 import java.io.IOException

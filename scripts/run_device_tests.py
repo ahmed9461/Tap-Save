@@ -8,7 +8,10 @@ import subprocess
 # Do not replace an owner's Instagram installation. This package exists only on an empty emulator.
 if subprocess.check_output(["adb", "shell", "getprop", "ro.kernel.qemu"], text=True).strip() != "1":
     raise SystemExit("Device tests require a disposable emulator")
-if "package:" in subprocess.check_output(["adb", "shell", "pm", "path", "com.instagram.android"], text=True):
+existing = subprocess.run(["adb", "shell", "pm", "path", "com.instagram.android"], text=True, capture_output=True)
+if existing.returncode not in (0, 1):
+    raise SystemExit("Could not verify the emulator package inventory")
+if "package:" in existing.stdout:
     raise SystemExit("Refusing to replace an existing Instagram package")
 subprocess.run(["./gradlew", "--no-daemon", ":instagram-fixture:assembleDebug"], check=True)
 subprocess.run(["adb", "install", "instagram-fixture/build/outputs/apk/debug/instagram-fixture-debug.apk"], check=True)

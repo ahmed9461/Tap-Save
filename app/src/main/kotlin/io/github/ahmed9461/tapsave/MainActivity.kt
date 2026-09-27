@@ -2,9 +2,7 @@ package io.github.ahmed9461.tapsave
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.ComponentName
 import androidx.activity.result.contract.ActivityResultContracts
-import io.github.ahmed9461.tapsave.platform.instagram.InstagramAccessibilityService
 import io.github.ahmed9461.tapsave.session.*
 import android.os.Bundle
 import android.provider.Settings

@@ -7,7 +7,6 @@ import androidx.core.net.toUri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import io.github.ahmed9461.tapsave.platform.ShareResult
 import io.github.ahmed9461.tapsave.platform.pendingTarget
 import io.github.ahmed9461.tapsave.platform.SharedTarget
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramShareParser

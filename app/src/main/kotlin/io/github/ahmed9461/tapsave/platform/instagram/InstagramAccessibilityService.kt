@@ -21,8 +21,7 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
     override fun onServiceConnected() { connected = this }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (pending == null || handingOff || !waitingForCopy || event?.packageName?.toString() != InstagramApp.PACKAGE_NAME) return
-        main.removeCallbacks(inspect)
-        main.postDelayed(inspect, 150)
+        if (!main.hasCallbacks(inspect)) main.postDelayed(inspect, 150)
     }
 
     override fun acquire(completed: (Result<String>) -> Unit) {
@@ -36,7 +35,7 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
         if (share == null) { finish(Result.failure(IllegalStateException("SHARE_CONTROL_NOT_UNIQUE"))); return }
         waitingForCopy = true
         if (!share.performAction(AccessibilityNodeInfo.ACTION_CLICK)) finish(Result.failure(IllegalStateException("SHARE_ACTION_FAILED")))
-        else main.postDelayed(inspect, 200)
+        else if (!main.hasCallbacks(inspect)) main.postDelayed(inspect, 200)
     }
 
     private fun inspectCopy() {
