@@ -4,7 +4,6 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
-import time
 
 # Do not replace an owner's Instagram installation. This package exists only on an empty emulator.
 if subprocess.check_output(["adb", "shell", "getprop", "ro.kernel.qemu"], text=True).strip() != "1":
@@ -14,17 +13,10 @@ subprocess.run(["adb", "shell", "settings", "put", "global", "stay_on_while_plug
 subprocess.run(["adb", "shell", "settings", "put", "system", "screen_off_timeout", "1800000"], check=True)
 subprocess.run(["adb", "shell", "input", "keyevent", "KEYCODE_WAKEUP"], check=True)
 subprocess.run(["adb", "shell", "wm", "dismiss-keyguard"], check=True)
-# Warm MediaProvider and wait for the fresh emulator's initial volume scan.
-# A cold API 36 scan was observed deleting a just-published test row during its sweep.
+# Warm MediaProvider and drain its initial work with AOSP's test-only idle call.
+# Keep this shell-side: no hidden provider API is used by the production app.
 subprocess.run(["adb", "shell", "content", "query", "--uri", "content://media/external/video/media", "--projection", "_id"], check=True, capture_output=True)
-deadline = time.monotonic() + 90
-quiet = 0
-while quiet < 2:
-    scan = subprocess.check_output(["adb", "shell", "content", "query", "--uri", "content://media/none/media_scanner"], text=True)
-    quiet = quiet + 1 if "No result found." in scan else 0
-    if time.monotonic() >= deadline:
-        raise SystemExit("Initial MediaStore scan did not finish")
-    time.sleep(1)
+subprocess.run(["adb", "shell", "content", "call", "--uri", "content://media", "--method", "wait_for_idle"], check=True, timeout=60)
 existing = subprocess.run(["adb", "shell", "pm", "path", "com.instagram.android"], text=True, capture_output=True)
 if existing.returncode not in (0, 1):
     raise SystemExit("Could not verify the emulator package inventory")
