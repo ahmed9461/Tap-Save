@@ -51,7 +51,7 @@ public class Inspector extends Instrumentation {
             if (root == null || !"com.instagram.android".contentEquals(root.getPackageName())) {
                 report.append("Instagram is not the active window; no tree read.");
             } else {
-                if ("legacyCopy".equals(arguments.getString("operation")) && controls(root, true).isEmpty()) {
+                if (arguments.getString("operation", "").endsWith("Copy") && controls(root, true).isEmpty()) {
                     List<AccessibilityNodeInfo> shares = controls(root, false);
                     report.append("share_matches=").append(shares.size()).append('\n');
                     if (shares.size() == 1) {
@@ -78,11 +78,19 @@ public class Inspector extends Instrumentation {
                     AccessibilityNodeInfo n = match;
                     for (int depth = 0; n != null && depth < 8; depth++, n = n.getParent()) report.append("parent=").append(depth).append(' ').append(properties(n)).append('\n');
                 }
-                if ("legacyCopy".equals(arguments.getString("operation")) && matches.size() == 1) {
-                    AccessibilityNodeInfo n = matches.get(0);
-                    for (int i = 0; n != null && i < 4; i++, n = n.getParent()) {
-                        if (n.isVisibleToUser() && n.isEnabled() && n.isClickable()) {
-                            report.append("legacy_ACTION_CLICK=").append(n.performAction(AccessibilityNodeInfo.ACTION_CLICK)).append('\n'); break;
+                if ("compareCopy".equals(arguments.getString("operation"))) {
+                    List<AccessibilityNodeInfo> images = new ArrayList<>();
+                    for (AccessibilityNodeInfo n : matches) if ("com.instagram.android:id/button".equals(n.getViewIdResourceName())) images.add(n);
+                    if (images.size() == 1) {
+                        AccessibilityNodeInfo n = images.get(0);
+                        report.append("legacy_image_ACTION_CLICK=").append(n.performAction(AccessibilityNodeInfo.ACTION_CLICK)).append('\n');
+                        for (int i = 0; n != null && i < 8; i++, n = n.getParent()) {
+                            if ("com.instagram.android:id/direct_external_reshare_row".equals(n.getViewIdResourceName())) break;
+                            boolean supported = false;
+                            for (AccessibilityNodeInfo.AccessibilityAction a : n.getActionList()) if (a.getId() == AccessibilityNodeInfo.ACTION_CLICK) supported = true;
+                            if (n.refresh() && n.isVisibleToUser() && n.isEnabled() && supported) {
+                                report.append("supported_parent=").append(i).append(" ACTION_CLICK=").append(n.performAction(AccessibilityNodeInfo.ACTION_CLICK)).append('\n'); break;
+                            }
                         }
                     }
                 }

@@ -125,6 +125,14 @@ class CurrentReelIntegrationTest {
         assertTrue(report, report.contains("CLEANUP reel_ready=true"))
         assertNull(InstagramAccessibilityService.pending)
     }
+    @Test fun instagram448DecorativeImageWithoutClickActionUsesActionableTile() {
+        launch("--ez nested true --ez decorative true --ez keepSheet true")
+        assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
+        val report = AcquisitionDiagnostics.read(context)
+        assertTrue(report, report.contains("class=android.widget.ImageView"))
+        assertTrue(report, report.contains("parent=2 id=16 accepted=true"))
+        assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
+    }
     @Test fun ambiguityFailsWithoutGuessingAndOtherAppsAreRejected() {
         launch("--ez ambiguous true")
         assertEquals("SHARE_CONTROL_NOT_UNIQUE", acquire().exceptionOrNull()?.message)

@@ -31,6 +31,21 @@ public class FixtureActivity extends Activity {
                 wrapper.setClickable(true); wrapper.setAccessibilityDelegate(rejectClick());
                 TextView text = new TextView(this); text.setText(arabic ? "نسخ الرابط" : "Copy link");
                 wrapper.addView(text); tile.addView(wrapper); content.addView(tile);
+                if (getIntent().getBooleanExtra("decorative", false)) {
+                    ImageView image = new ImageView(this);
+                    image.setImageResource(android.R.drawable.ic_menu_save);
+                    image.setContentDescription(arabic ? "نسخ الرابط" : "Copy link"); image.setClickable(true);
+                    image.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                        @Override public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                            super.onInitializeAccessibilityNodeInfo(host, info);
+                            info.removeAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK);
+                        }
+                        @Override public boolean performAccessibilityAction(View host, int action, Bundle args) {
+                            return action != AccessibilityNodeInfo.ACTION_CLICK && super.performAccessibilityAction(host, action, args);
+                        }
+                    });
+                    LinearLayout imageContainer = new LinearLayout(this); imageContainer.addView(image); tile.addView(imageContainer);
+                }
                 if (getIntent().getBooleanExtra("delayed", false)) {
                     tile.setEnabled(false);
                     tile.postDelayed(() -> { tile.setEnabled(true); tile.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED); }, 650);

@@ -45,6 +45,14 @@ object InstagramNodes {
         repeat(8) { depth ->
             val current = node ?: return false
             if (current.packageName?.toString() != InstagramApp.PACKAGE_NAME) return false
+            // Observed on Instagram 448 Arabic: a decorative ImageView is clickable
+            // but advertises no click action. Its containing tile handles ACTION_CLICK.
+            // Never climb beyond that tile into the whole share row or bottom sheet.
+            if (action == InstagramControls.Action.COPY_LINK && current.viewIdResourceName in setOf(
+                    "com.instagram.android:id/direct_external_reshare_row",
+                    "com.instagram.android:id/direct_external_share_container_view",
+                    "com.instagram.android:id/layout_container_bottom_sheet",
+                )) return false
             val fresh = current.refresh()
             trace?.add("CANDIDATE $action parent=$depth fresh=$fresh ${properties(current)}")
             if (fresh && current.isVisibleToUser && current.isEnabled) {
