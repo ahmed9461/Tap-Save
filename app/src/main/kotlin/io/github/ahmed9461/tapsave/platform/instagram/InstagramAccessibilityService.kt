@@ -47,12 +47,15 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
     private fun inspectStage() {
         if (pending == null || stage == Stage.HANDOFF) return
         if (getSystemService(KeyguardManager::class.java).isKeyguardLocked) { complete(Result.failure(IllegalStateException("SCREEN_LOCKED"))); return }
+        if (stage == Stage.CLEANUP) { inspectCleanup(); return }
         val root = rootInActiveWindow
-        if (root?.packageName?.toString() != InstagramApp.PACKAGE_NAME) {
-            if (stage == Stage.CLEANUP) { inspectCleanup(); return }
+        if (root == null) {
+            trace?.add("WAIT stage=$stage window_missing=true")
+            schedule(100); return
+        }
+        if (root.packageName?.toString() != InstagramApp.PACKAGE_NAME) {
             fail("INSTAGRAM_LEFT"); return
         }
-        if (stage == Stage.CLEANUP) { inspectCleanup(); return }
         val action = if (stage == Stage.SHARE) InstagramControls.Action.SHARE else InstagramControls.Action.COPY_LINK
         val scan = InstagramNodes.scan(root, action, trace)
         if (stage == Stage.COPY && scan.matches.isNotEmpty()) observedCopy = true
@@ -91,9 +94,13 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
     }
     private fun inspectCleanup() {
         val root = rootInActiveWindow
+        if (root == null && SystemClock.uptimeMillis() < cleanupDeadline) {
+            trace?.add("CLEANUP waiting_for_window=true")
+            schedule(100); return
+        }
         if (root?.packageName?.toString() != InstagramApp.PACKAGE_NAME || getSystemService(KeyguardManager::class.java).isKeyguardLocked) {
             trace?.add("CLEANUP skipped=foreground_changed")
-            if (cleanupResult == null) cleanupResult = Result.failure(IllegalStateException("INSTAGRAM_LEFT"))
+            if (cleanupResult == null) cleanupResult = Result.failure(IllegalStateException(if (root == null) "WINDOW_NOT_READY" else "INSTAGRAM_LEFT"))
             finishCleanup(); return
         }
         val copyVisible = InstagramNodes.scan(root, InstagramControls.Action.COPY_LINK).matches.isNotEmpty()

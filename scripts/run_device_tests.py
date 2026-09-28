@@ -21,8 +21,10 @@ if "package:" in existing.stdout:
 subprocess.run(["./gradlew", "--no-daemon", ":instagram-fixture:assembleDebug"], check=True)
 subprocess.run(["adb", "install", "instagram-fixture/build/outputs/apk/debug/instagram-fixture-debug.apk"], check=True)
 base = ["./gradlew", "--no-daemon", ":app:connectedDebugAndroidTest"]
-subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.LiveNetwork"], check=True)
-subprocess.run(["adb", "pull", "/sdcard/Android/data/io.github.ahmed9461.tapsave/files/ui-checks", "app/build/reports/ui-checks"], check=True)
+gate = subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.LiveNetwork"])
+screens = subprocess.run(["adb", "pull", "/sdcard/Android/data/io.github.ahmed9461.tapsave/files/ui-checks", "app/build/reports/ui-checks"], capture_output=True, text=True)
+gate.check_returncode()
+screens.check_returncode()
 subprocess.run(["adb", "uninstall", "com.instagram.android"], check=True)
 subprocess.run(["python3", "scripts/summarize_checks.py"], check=True)
 live = os.environ.get("LIVE_REEL", "")

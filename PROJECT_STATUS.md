@@ -7,6 +7,8 @@
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
+**Current phone finding:** The isolated ADB diagnostic reproduced the decorative Copy image's rejected ACTION_CLICK (`false`) and the supported containing tile's accepted ACTION_CLICK (`true`) on the actual S22/Instagram 448 Arabic UI. Production dispatch now checks supported actions and walks to that tile. The complete new-app focused clipboard/save path and redesigned screens still need their final gates.
+
 ## Implemented
 
 - One shipping Kotlin/Compose application module (plus a separate disposable UI fixture) with a pinned, verified stable toolchain and build/test/lint CI.

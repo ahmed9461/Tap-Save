@@ -15,8 +15,15 @@ object InstagramNodes {
     }
     fun scan(root: AccessibilityNodeInfo?, action: InstagramControls.Action, trace: AcquisitionDiagnostics? = null): Scan {
         if (root?.packageName?.toString() != InstagramApp.PACKAGE_NAME) return Scan(emptyList(), false)
+        // Scope Copy lookup to the observed external-action row when present. Its
+        // generic child IDs need content descriptions to distinguish Copy from other actions.
+        val rows = if (action == InstagramControls.Action.COPY_LINK) root.findAccessibilityNodeInfosByViewId(
+            "com.instagram.android:id/direct_external_reshare_row").filter { it.isVisibleToUser } else emptyList()
+        if (rows.size > 1) return Scan(emptyList(), true)
+        val searchRoot = rows.singleOrNull() ?: root
+        trace?.add("SCOPE $action external_row=${rows.isNotEmpty()}")
         val queue = ArrayDeque<Pair<AccessibilityNodeInfo, String>>()
-        queue.add(root to "0")
+        queue.add(searchRoot to "0")
         val matches = mutableListOf<Match>()
         var visited = 0
         while (queue.isNotEmpty()) {

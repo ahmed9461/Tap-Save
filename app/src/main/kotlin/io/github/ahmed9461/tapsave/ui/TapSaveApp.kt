@@ -55,8 +55,13 @@ fun TapSaveApp(
     var opacity by remember { mutableFloatStateOf(preferences.opacity) }
     var floating by remember { mutableStateOf(preferences.enabled) }
     var advanced by rememberSaveable { mutableStateOf(false) }
-    var report by remember { mutableStateOf(AcquisitionDiagnostics.read(context)) }
+    fun diagnostics(): String {
+        val state = SaveUiState.current ?: SaveJournal(context).read()
+        return AcquisitionDiagnostics.read(context) + "\n\nLatest download: " + listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · ")
+    }
+    var report by remember { mutableStateOf(diagnostics()) }
     val missing = SetupPermission.entries.filterNot { it in permissions }
+    val pageScroll = key(page) { rememberScrollState() }
     val saved = SaveUiState.current ?: remember { SaveJournal(context).read()?.takeUnless { it.active } }
     fun home() { setup.edit { putBoolean("seen", true) }; page = "home" }
     BackHandler(page != "home") { home() }
@@ -71,7 +76,7 @@ fun TapSaveApp(
                     }
                     if (page == "home") IconButton(onClick = { page = "settings" }) { Icon(painterResource(R.drawable.ic_settings), "Settings") }
                 }
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Column(Modifier.weight(1f).verticalScroll(pageScroll), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     when (page) {
                         "home" -> {
                             Panel {
@@ -165,7 +170,7 @@ fun TapSaveApp(
                                     }
                                 }
                             }
-                            TextButton(onClick = { advanced = !advanced; report = AcquisitionDiagnostics.read(context) }) { Text(if (advanced) "Hide Advanced" else "Advanced") }
+                            TextButton(onClick = { advanced = !advanced; report = diagnostics() }) { Text(if (advanced) "Hide Advanced" else "Advanced") }
                             if (advanced) Panel {
                                 Label("Acquisition diagnostics")
                                 Text("Last tap only. Control IDs, supported actions, timing and clipboard freshness. Screen text and link contents are excluded.", color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -93,7 +93,8 @@ class CurrentReelIntegrationTest {
             } } catch (failure: AssertionError) {
                 throw AssertionError("Overlay tap unavailable: windows=" + automation.windows.joinToString { "${it.type}/${it.isFocused}/${it.root?.packageName}" } + "; connected=${InstagramAccessibilityService.connected != null}", failure)
             }
-            waitForSave(30_000) { SaveUiState.current?.phase == SavePhase.SAVED }
+            try { waitForSave(30_000) { SaveUiState.current?.phase == SavePhase.SAVED } }
+            catch (failure: AssertionError) { throw AssertionError(AcquisitionDiagnostics.read(context), failure) }
         }
         assertEquals("https://www.instagram.com/reel/AdapterFixture/", SaveUiState.current!!.target.canonicalUrl)
         assertArrayEquals(bytes, context.contentResolver.openInputStream(SaveUiState.current!!.uri!!)!!.use { it.readBytes() })
@@ -110,7 +111,7 @@ class CurrentReelIntegrationTest {
         assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
         val report = AcquisitionDiagnostics.read(context)
         assertTrue(report, report.contains("accepted=false"))
-        assertTrue(report, report.contains("parent=2 id=16 accepted=true"))
+        assertTrue(report, Regex("ACTION COPY_LINK parent=[1-7] id=16 accepted=true").containsMatchIn(report))
         assertTrue(report, report.contains("CLEANUP reel_ready=true"))
         assertTrue(report, report.contains("CLIPBOARD focused=true"))
         assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
@@ -130,7 +131,7 @@ class CurrentReelIntegrationTest {
         assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
         val report = AcquisitionDiagnostics.read(context)
         assertTrue(report, report.contains("class=android.widget.ImageView"))
-        assertTrue(report, report.contains("parent=2 id=16 accepted=true"))
+        assertTrue(report, Regex("ACTION COPY_LINK parent=[1-7] id=16 accepted=true").containsMatchIn(report))
         assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
     }
     @Test fun ambiguityFailsWithoutGuessingAndOtherAppsAreRejected() {

@@ -18,6 +18,7 @@ public class FixtureActivity extends Activity {
         share.setOnClickListener(v -> {
             Dialog sheet = new Dialog(this);
             LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
+            content.setId(com.instagram.android.R.id.direct_external_reshare_row);
             TextView heading = new TextView(this); heading.setText("TEST SHARE SHEET"); content.addView(heading);
             Runnable copy = () -> {
                 if (!getIntent().getBooleanExtra("stale", false)) getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("fixture", "https://www.instagram.com/reel/AdapterFixture/"));
