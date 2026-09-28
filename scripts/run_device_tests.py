@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import time
 
 # Do not replace an owner's Instagram installation. This package exists only on an empty emulator.
 if subprocess.check_output(["adb", "shell", "getprop", "ro.kernel.qemu"], text=True).strip() != "1":
@@ -13,6 +14,17 @@ subprocess.run(["adb", "shell", "settings", "put", "global", "stay_on_while_plug
 subprocess.run(["adb", "shell", "settings", "put", "system", "screen_off_timeout", "1800000"], check=True)
 subprocess.run(["adb", "shell", "input", "keyevent", "KEYCODE_WAKEUP"], check=True)
 subprocess.run(["adb", "shell", "wm", "dismiss-keyguard"], check=True)
+# Warm MediaProvider and wait for the fresh emulator's initial volume scan.
+# A cold API 36 scan was observed deleting a just-published test row during its sweep.
+subprocess.run(["adb", "shell", "content", "query", "--uri", "content://media/external/video/media", "--projection", "_id"], check=True, capture_output=True)
+deadline = time.monotonic() + 90
+quiet = 0
+while quiet < 2:
+    scan = subprocess.check_output(["adb", "shell", "content", "query", "--uri", "content://media/none/media_scanner"], text=True)
+    quiet = quiet + 1 if "No result found." in scan else 0
+    if time.monotonic() >= deadline:
+        raise SystemExit("Initial MediaStore scan did not finish")
+    time.sleep(1)
 existing = subprocess.run(["adb", "shell", "pm", "path", "com.instagram.android"], text=True, capture_output=True)
 if existing.returncode not in (0, 1):
     raise SystemExit("Could not verify the emulator package inventory")
@@ -22,9 +34,10 @@ subprocess.run(["./gradlew", "--no-daemon", ":instagram-fixture:assembleDebug"],
 subprocess.run(["adb", "install", "instagram-fixture/build/outputs/apk/debug/instagram-fixture-debug.apk"], check=True)
 base = ["./gradlew", "--no-daemon", ":app:connectedDebugAndroidTest"]
 gate = subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.LiveNetwork"])
-screens = subprocess.run(["adb", "pull", "/sdcard/Android/data/io.github.ahmed9461.tapsave/files/ui-checks", "app/build/reports/ui-checks"], capture_output=True, text=True)
 gate.check_returncode()
-screens.check_returncode()
+for name in ("setup", "home", "settings", "overlay-idle", "overlay-progress", "overlay-success", "overlay-error"):
+    if not list(Path("app/build/outputs").rglob(f"{name}.png")):
+        raise SystemExit(f"AGP did not collect {name} screenshot")
 subprocess.run(["adb", "uninstall", "com.instagram.android"], check=True)
 subprocess.run(["python3", "scripts/summarize_checks.py"], check=True)
 live = os.environ.get("LIVE_REEL", "")

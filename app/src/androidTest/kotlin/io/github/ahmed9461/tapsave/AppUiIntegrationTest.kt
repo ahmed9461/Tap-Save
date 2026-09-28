@@ -1,6 +1,5 @@
 package io.github.ahmed9461.tapsave
 
-import android.graphics.Bitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -13,7 +12,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
-import java.io.File
 
 class AppUiIntegrationTest {
     @get:Rule val compose = createEmptyComposeRule()
@@ -61,9 +59,6 @@ class AppUiIntegrationTest {
     }
     private fun screenshot(name: String) {
         compose.waitForIdle()
-        val image = instrumentation.uiAutomation.takeScreenshot() ?: error("No screenshot")
-        val directory = File(context.getExternalFilesDir(null), "ui-checks").apply { mkdirs() }
-        File(directory, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        image.recycle()
+        captureUi(name)
     }
 }

@@ -127,7 +127,6 @@ fun TapSaveApp(
                                 Text(next?.explanation ?: "Your save button is ready. You can change its size and opacity in Settings.")
                                 Button(onClick = { if (next != null) onPermission(next) else { floating = true; onActive(true); home() } }, modifier = Modifier.fillMaxWidth()) { Text(if (next != null) "Open Android settings" else "Activate Tap Save") }
                             }
-                            TextButton(onClick = { home() }) { Text("Use Share for now") }
                         }
                         "settings" -> {
                             Panel {
@@ -185,6 +184,7 @@ fun TapSaveApp(
                     message?.let { Text(it, color = TapMint) }
                     Spacer(Modifier.height(12.dp))
                 }
+                if (page == "setup") TextButton(onClick = { home() }, modifier = Modifier.fillMaxWidth()) { Text("Use Share for now") }
             }
         }
     }

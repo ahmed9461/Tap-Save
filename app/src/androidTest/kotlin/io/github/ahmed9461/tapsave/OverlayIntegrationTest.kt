@@ -50,19 +50,28 @@ class OverlayIntegrationTest {
     @Test fun nativeWindowFromNonActivityContextAttachDetachIsIdempotent() {
         grantSessionPermissions()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                val window = OverlayWindow(activity.applicationContext, onFailure = { throw AssertionError("Window update failed") })
-                try {
+            lateinit var window: OverlayWindow
+            scenario.onActivity { window = OverlayWindow(it.applicationContext, onFailure = { throw AssertionError("Window update failed") }) }
+            try {
+                scenario.onActivity {
                     window.show()
                     window.show()
                     assertTrue(window.isAttached)
                     window.reposition()
-                } finally {
+                }
+                for ((state, glyph) in listOf("idle" to "↓", "busy" to "…", "progress" to "63%", "success" to "✓", "error" to "!")) {
+                    scenario.onActivity { window.render(glyph, "Save current Reel") }
+                    instrumentation.waitForIdleSync()
+                    SystemClock.sleep(100) // Allow a rendered frame before the visual-review capture.
+                    captureUi("overlay-$state")
+                }
+            } finally {
+                scenario.onActivity {
                     window.hide()
                     window.hide()
                 }
-                assertFalse(window.isAttached)
             }
+            assertFalse(window.isAttached)
         }
     }
 

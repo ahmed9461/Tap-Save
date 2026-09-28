@@ -83,4 +83,5 @@ jobs:
             app/build/reports/
             app/build/test-results/
             app/build/outputs/androidTest-results/
+            app/build/outputs/**/*.png
           retention-days: 7
