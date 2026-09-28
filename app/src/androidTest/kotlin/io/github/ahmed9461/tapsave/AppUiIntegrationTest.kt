@@ -60,7 +60,7 @@ class AppUiIntegrationTest {
     }
     private fun screenshot(name: String) {
         compose.waitForIdle()
-        captureUi(name, compose.onRoot().captureToImage(timeoutMillis = 5_000).asAndroidBitmap())
+        captureUi(name, compose.onRoot().captureToImage().asAndroidBitmap())
         captureUi("$name-screen")
     }
 }

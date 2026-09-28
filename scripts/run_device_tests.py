@@ -16,7 +16,8 @@ subprocess.run(["adb", "shell", "wm", "dismiss-keyguard"], check=True)
 # Warm MediaProvider and drain its initial work with AOSP's test-only idle call.
 # Keep this shell-side: no hidden provider API is used by the production app.
 subprocess.run(["adb", "shell", "content", "query", "--uri", "content://media/external/video/media", "--projection", "_id"], check=True, capture_output=True)
-subprocess.run(["adb", "shell", "content", "call", "--uri", "content://media", "--method", "wait_for_idle"], check=True, timeout=60)
+if os.environ.get("API_LEVEL") == "36":
+    subprocess.run(["adb", "shell", "content", "call", "--uri", "content://media", "--method", "wait_for_idle"], check=True, timeout=60)
 existing = subprocess.run(["adb", "shell", "pm", "path", "com.instagram.android"], text=True, capture_output=True)
 if existing.returncode not in (0, 1):
     raise SystemExit("Could not verify the emulator package inventory")
