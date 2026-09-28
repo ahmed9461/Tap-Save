@@ -10,7 +10,6 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.WindowManager
-import android.widget.Button
 import androidx.core.content.edit
 import kotlin.math.roundToInt
 
@@ -24,11 +23,28 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, pri
     } else baseContext
     private val manager = context.getSystemService(WindowManager::class.java)
     private val preferences = context.getSharedPreferences("overlay", Context.MODE_PRIVATE)
-    private val size = (56 * context.resources.displayMetrics.density).roundToInt()
-    private var button: Button? = null
+    private val appearance = OverlayPreferences(context)
+    private var size = (appearance.sizeDp * context.resources.displayMetrics.density).roundToInt()
+    private var button: FloatingSaveView? = null
     private var glyph = "↓"
     private var description = "Save current Reel"
-    fun render(text: String, label: String) { glyph = text; description = label; button?.apply { this.text = glyph; contentDescription = description } }
+    fun render(text: String, label: String) {
+        glyph = text; description = label
+        val state = when {
+            text == "✓" -> FloatingSaveView.State.SUCCESS
+            text == "!" -> FloatingSaveView.State.ERROR
+            text.endsWith('%') -> FloatingSaveView.State.PROGRESS
+            text == "…" -> FloatingSaveView.State.BUSY
+            else -> FloatingSaveView.State.IDLE
+        }
+        button?.render(state, text.removeSuffix("%").toFloatOrNull()?.div(100) ?: 0f, label)
+    }
+    fun refreshAppearance(resetPosition: Boolean = false) {
+        size = (appearance.sizeDp * context.resources.displayMetrics.density).roundToInt()
+        params.width = size; params.height = size; params.alpha = appearance.opacity
+        if (resetPosition) { params.x = 0; params.y = size * 3 }
+        reposition()
+    }
     @SuppressLint("RtlHardcoded") // Drag coordinates and saved positions are physical screen coordinates.
     private val params = WindowManager.LayoutParams(
         size, size, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -38,18 +54,16 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, pri
         gravity = Gravity.TOP or Gravity.LEFT
         x = preferences.getInt("x", 0)
         y = preferences.getInt("y", size * 3)
+        alpha = appearance.opacity
     }
 
     val isAttached: Boolean get() = button != null
 
-    @SuppressLint("ClickableViewAccessibility") // Touch-up delegates taps to performClick; Button keeps accessibility actions.
+    @SuppressLint("ClickableViewAccessibility") // Touch-up delegates taps to performClick; the view exposes Button semantics.
     fun show() {
         if (button != null) return
         clampPosition()
-        val view = Button(context).apply {
-            setPadding(0, 0, 0, 0)
-            minWidth = 0; minHeight = 0; maxLines = 1
-            text = glyph
+        val view = FloatingSaveView(context).apply {
             contentDescription = description
             setOnClickListener {
                 onTap()
@@ -87,6 +101,7 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, pri
         }
         manager.addView(view, params)
         button = view
+        render(glyph, description)
     }
 
     fun hide() {

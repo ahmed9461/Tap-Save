@@ -107,6 +107,8 @@ Agents must follow `AGENTS.md`, the active plan, and the project documentation. 
 
 ## Latest verified continuation
 
+- New owner evidence (2026-09-28): 0.3 direct acquisition fails `COPY_ACTION_FAILED` with Arabic Copy link visibly open. Earlier plain-Button fixtures did not represent a rejected click or nested action tile. The S22 Ultra is connected by ADB; inspect only Instagram control metadata, not unrelated screen/account/message text. Actual production UI redesign is now explicitly requested within Plan 0001.
+
 - Source `411ee70d79b48e779b0a06a6a7e03b292eee4d05`: CI `36354556280` passed build/strict lint, 18 JVM and 39 instrumentation tests on each of API 29/35/36, zero failures/errors/skips. The actual floating button in the Arabic disposable fixture initiated acquisition and an exact-byte MediaStore save; English acquisition and fresh/stale/ambiguous/other-app cases passed. This does not prove the production Instagram tree.
 - Live CI `36354557958` additionally passed three real anonymous Share saves with audio/video metadata and decoded frames. Tested APK: 29,709,819 bytes, SHA-256 `155ab82f2376960a11d27d33e87a62d25f9b4788d626f796a8d9131e14524ce3`. No production dependency added; Plan 0001 remains active for owner Instagram/session/OEM/battery acceptance.
 - Android automatic notification group summaries may reuse a numeric ID with a different tag. Lifecycle tests must identify the actual untagged overlay notification and worker, not assume ID alone identifies it. A foreground-service start must fulfil its foreground contract before stopping after a prerequisite changes between caller check and service startup.

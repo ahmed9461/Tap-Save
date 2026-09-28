@@ -13,6 +13,7 @@ import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.ahmed9461.tapsave.download.*
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramAccessibilityService
+import io.github.ahmed9461.tapsave.platform.instagram.AcquisitionDiagnostics
 import org.junit.After
 import org.junit.Before
 import org.junit.Assert.*
@@ -68,7 +69,7 @@ class CurrentReelIntegrationTest {
                 done.countDown()
             }
         }
-        assertTrue("Acquisition timed out", done.await(10, TimeUnit.SECONDS))
+        assertTrue("Acquisition timed out", done.await(18, TimeUnit.SECONDS))
         return result!!
     }
     @Test fun floatingButtonAcquiresArabicReelAndStartsRealDownloadAndMediaStoreSave() {
@@ -86,7 +87,7 @@ class CurrentReelIntegrationTest {
             // invoking it. Re-query stale nodes; stop as soon as the app accepts the tap.
             try { waitForSave {
                 if (InstagramAccessibilityService.pending != null || SaveUiState.current != null) true
-                else automation.windows.mapNotNull { it.root }.flatMap { it.findAccessibilityNodeInfosByText("↓") }
+                else automation.windows.mapNotNull { it.root }.flatMap { it.findAccessibilityNodeInfosByText("Save current Reel") }
                     .singleOrNull { it.packageName?.toString() == context.packageName }
                     ?.let { it.refresh() && it.performAction(AccessibilityNodeInfo.ACTION_CLICK) } == true
             } } catch (failure: AssertionError) {
@@ -103,6 +104,26 @@ class CurrentReelIntegrationTest {
         assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
         launch("--ez stale true")
         assertEquals("FRESH_REEL_LINK_MISSING", acquire().exceptionOrNull()?.message)
+    }
+    @Test fun rejectedClickableWrapperUsesParentAndWaitsForSheetReadiness() {
+        launch("--ez nested true --ez delayed true --ez keepSheet true")
+        assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
+        val report = AcquisitionDiagnostics.read(context)
+        assertTrue(report, report.contains("accepted=false"))
+        assertTrue(report, report.contains("parent=2 id=16 accepted=true"))
+        assertTrue(report, report.contains("CLEANUP reel_ready=true"))
+        assertTrue(report, report.contains("CLIPBOARD focused=true"))
+        assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
+        assertFalse(report.contains("AdapterFixture"))
+    }
+    @Test fun copyActionFailureIsBoundedAndClosesOwnedSheet() {
+        launch("--ez nested true --ez fail true")
+        assertEquals("COPY_ACTION_FAILED", acquire().exceptionOrNull()?.message)
+        waitForSave { automation.rootInActiveWindow?.findAccessibilityNodeInfosByText("TEST FIXTURE")?.isNotEmpty() == true }
+        val report = AcquisitionDiagnostics.read(context)
+        assertTrue(report, report.contains("number=4 accepted=false"))
+        assertTrue(report, report.contains("CLEANUP reel_ready=true"))
+        assertNull(InstagramAccessibilityService.pending)
     }
     @Test fun ambiguityFailsWithoutGuessingAndOtherAppsAreRejected() {
         launch("--ez ambiguous true")

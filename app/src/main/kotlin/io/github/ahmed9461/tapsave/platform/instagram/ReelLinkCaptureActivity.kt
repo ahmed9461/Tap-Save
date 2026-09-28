@@ -18,14 +18,21 @@ class ReelLinkCaptureActivity : Activity() {
     }
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD focus=$hasFocus")
+        main.removeCallbacksAndMessages(null)
         if (hasFocus) readFreshLink()
     }
     private fun readFreshLink() {
         val request = InstagramAccessibilityService.pending
         if (request == null || request.id != intent.getStringExtra("request") || !hasWindowFocus()) { finish(); return }
         val clipboard = getSystemService(ClipboardManager::class.java)
-        val clip = clipboard.primaryClip
+        val clip = try { clipboard.primaryClip } catch (_: SecurityException) {
+            InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD denied=true")
+            InstagramAccessibilityService.connected?.finish(Result.failure(IllegalStateException("CLIPBOARD_ACCESS_DENIED")))
+            finish(); return
+        }
         val timestamp = clip?.description?.timestamp ?: 0
+        if (attempts == 0) InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD focused=${hasWindowFocus()} present=${clip != null} fresh=${timestamp >= request.copiedAfter} items=${clip?.itemCount ?: 0}")
         if (timestamp >= request.copiedAfter && request.copiedAfter > 0 && clip?.itemCount == 1) {
             val item = clip.getItemAt(0)
             val raw = item.text?.toString() ?: item.uri?.toString()
@@ -35,9 +42,9 @@ class ReelLinkCaptureActivity : Activity() {
                 is ShareResult.RedirectLink -> result.canonicalUrl
                 else -> null
             }
-            if (url != null) { InstagramAccessibilityService.connected?.finish(Result.success(url)); finish(); return }
+            if (url != null) { InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD fresh_reel=true"); InstagramAccessibilityService.connected?.finish(Result.success(url)); finish(); return }
         }
-        if (++attempts < 10) main.postDelayed({ readFreshLink() }, 100)
+        if (++attempts < 20) main.postDelayed({ readFreshLink() }, 100)
         else { InstagramAccessibilityService.connected?.finish(Result.failure(IllegalStateException("FRESH_REEL_LINK_MISSING"))); finish() }
     }
     override fun onDestroy() {

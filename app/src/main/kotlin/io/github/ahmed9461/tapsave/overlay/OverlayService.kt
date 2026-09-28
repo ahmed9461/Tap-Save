@@ -20,7 +20,10 @@ import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
-import android.widget.Toast
+import android.content.SharedPreferences
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import io.github.ahmed9461.tapsave.download.*
 import io.github.ahmed9461.tapsave.platform.instagram.InstagramAccessibilityService
 import io.github.ahmed9461.tapsave.MainActivity
@@ -36,6 +39,11 @@ class OverlayService : Service() {
     private lateinit var foreground: UsageForegroundContext
     private lateinit var window: OverlayWindow
     private var acquiring = false
+    private lateinit var preferences: OverlayPreferences
+    private val appearanceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (!preferences.enabled) stopSelf()
+        else window.refreshAppearance(key == "position-reset")
+    }
     private val resetStatus = Runnable { if (!acquiring && SaveUiState.current?.active != true) window.render("↓", "Save current Reel") }
     private val saveObserver: (SaveState?) -> Unit = { state ->
         main.removeCallbacks(resetStatus)
@@ -49,7 +57,6 @@ class OverlayService : Service() {
                 SavePhase.CANCELLED -> "↓"
             }
             window.render(glyph, saveMessage(this, state) + if (state.active) ". Tap to cancel" else ". Tap to save current Reel")
-            if (state.phase == SavePhase.FAILED) Toast.makeText(this, saveMessage(this, state), Toast.LENGTH_LONG).show()
             if (!state.active) main.postDelayed(resetStatus, 3_000)
         }
     }
@@ -59,9 +66,10 @@ class OverlayService : Service() {
         val adapter = InstagramAccessibilityService.connected
         if (adapter == null) {
             window.render("!", getString(R.string.accessibility_enable))
-            Toast.makeText(this, R.string.accessibility_enable, Toast.LENGTH_LONG).show(); return
+            lastAcquisitionError = getString(R.string.accessibility_enable); return
         }
         acquiring = true
+        lastAcquisitionError = null
         main.removeCallbacks(resetStatus)
         window.render("…", getString(R.string.reading_reel))
         adapter.acquire { result ->
@@ -74,8 +82,7 @@ class OverlayService : Service() {
     }
     private fun acquisitionFailed(code: String) {
         window.render("!", "$code. " + getString(R.string.overlay_share_hint))
-        Toast.makeText(this, "$code · " + getString(R.string.overlay_share_hint), Toast.LENGTH_LONG).show()
-        main.postDelayed(resetStatus, 3_000)
+        lastAcquisitionError = code
     }
     private val generation = AtomicInteger()
     @Volatile private var polling = false
@@ -108,6 +115,8 @@ class OverlayService : Service() {
         super.onCreate()
         foreground = UsageForegroundContext(this)
         window = OverlayWindow(this, onFailure = { stopSelf() }, onTap = { tapSave() })
+        preferences = OverlayPreferences(this)
+        preferences.storage.registerOnSharedPreferenceChangeListener(appearanceListener)
         SaveUiState.observe(saveObserver)
         workerThread = HandlerThread("TapSave-context").apply { start() }
         worker = Handler(workerThread.looper)
@@ -132,7 +141,7 @@ class OverlayService : Service() {
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.overlay_notification))
-            .setContentText(getString(R.string.overlay_share_hint))
+            .setContentText("Ready while you browse Instagram")
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.stop_overlay), stop).build())
@@ -141,7 +150,7 @@ class OverlayService : Service() {
         startForeground(1, notification, type)
         // A permission can change after the caller checked it. Fulfil the foreground
         // startup contract before stopping; otherwise Android can later kill this process.
-        if (canStart(this)) updatePolling() else stopSelf()
+        if (canStart(this) && preferences.enabled) { running = true; updatePolling() } else stopSelf()
         return START_NOT_STICKY
     }
 
@@ -180,6 +189,8 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        running = false
+        preferences.storage.unregisterOnSharedPreferenceChangeListener(appearanceListener)
         SaveUiState.remove(saveObserver)
         if (acquiring) InstagramAccessibilityService.connected?.onInterrupt()
         polling = false
@@ -196,6 +207,10 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
+        var running by mutableStateOf(false)
+            private set
+        var lastAcquisitionError by mutableStateOf<String?>(null)
+            private set
         private const val CHANNEL = "overlay-session"
         private const val ACTION_STOP = "io.github.ahmed9461.tapsave.STOP_OVERLAY"
         const val POLL_INTERVAL_MS = 1_500L

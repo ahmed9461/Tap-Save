@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.ahmed9461.tapsave"
         minSdk = 29
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.3.0-dev"
+        versionCode = 4
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

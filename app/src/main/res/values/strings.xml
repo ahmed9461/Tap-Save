@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Tap Save</string>
-    <string name="spike_status">Share a public Instagram Reel to start saving it to Movies/Tap Save.</string>
     <string name="save_channel">Reel saves</string>
     <string name="resolving">Finding the video…</string>
     <string name="downloading">Saving video…</string>
@@ -24,22 +23,15 @@
     <string name="share_one_reel">Share one Reel at a time.</string>
     <string name="invalid_share">Share an Instagram Reel link to Tap Save.</string>
     <string name="done">Done</string>
-    <string name="overlay_experiment">Enable the optional Instagram adapter for ↓ to acquire the current Reel through Share and Copy link. A brief link-reading window may appear. Share → Tap Save also works independently.</string>
-    <string name="overlay_permission">Allow floating control</string>
-    <string name="usage_permission">Allow app context access</string>
-    <string name="notification_permission">Allow session notifications</string>
-    <string name="start_overlay">Start overlay experiment</string>
-    <string name="stop_overlay">Stop overlay</string>
-    <string name="overlay_started">Session requested. Open Instagram to test the control.</string>
-    <string name="overlay_stopped">Overlay stopped</string>
+    <string name="stop_overlay">Turn off</string>
     <string name="overlay_start_failed">Could not start the overlay. Check permissions and try again.</string>
     <string name="settings_unavailable">Open Android Settings to manage this permission.</string>
     <string name="overlay_share_hint">Share a Reel to Tap Save</string>
     <string name="overlay_channel">Overlay session</string>
-    <string name="overlay_notification">Tap Save overlay experiment is running</string>
+    <string name="overlay_notification">Tap Save is active</string>
     <string name="reading_reel">Reading the current Reel link…</string>
     <string name="accessibility_label">Tap Save • Instagram only</string>
-    <string name="accessibility_enable">Enable the optional Instagram adapter in Tap Save, or Share a Reel to Tap Save.</string>
+    <string name="accessibility_enable">Finish one-tap setup in Tap Save, or use Instagram Share.</string>
     <string name="accessibility_description">Only after you tap ↓, Tap Save reads Instagram controls and selects Share then Copy link. A brief focused window reads the newly copied link. No idle screen reading, message sending, or monitoring of other apps. You can disable this service at any time.</string>
     <string name="session_cleared">Instagram session disconnected and cleared.</string>
     <string name="session_clear_failed">Session disabled. Clearing could not be confirmed; try Clear again.</string>

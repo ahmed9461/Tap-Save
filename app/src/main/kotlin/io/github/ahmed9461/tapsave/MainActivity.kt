@@ -1,100 +1,84 @@
 package io.github.ahmed9461.tapsave
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import androidx.activity.result.contract.ActivityResultContracts
-import io.github.ahmed9461.tapsave.session.*
 import android.os.Bundle
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
-import io.github.ahmed9461.tapsave.overlay.OverlayService
-import io.github.ahmed9461.tapsave.ui.SpikeScreen
+import io.github.ahmed9461.tapsave.download.*
+import io.github.ahmed9461.tapsave.overlay.*
+import io.github.ahmed9461.tapsave.platform.UsageForegroundContext
+import io.github.ahmed9461.tapsave.session.*
+import io.github.ahmed9461.tapsave.ui.*
 
 class MainActivity : ComponentActivity() {
+    private var permissions by mutableStateOf(emptySet<SetupPermission>())
     private var sessionEnabled by mutableStateOf(false)
+    private var message by mutableStateOf<String?>(null)
+    private var clearing by mutableStateOf(false)
     private val login = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) InstagramSession.enable(this, true)
-        sessionEnabled = InstagramSession.enabled(this)
+        refresh()
     }
-    private var canStart by mutableStateOf(false)
-    private var message by mutableStateOf<Int?>(null)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        refresh()
         setContent {
-            SpikeScreen {
-                Text(stringResource(R.string.spike_status))
-                Text(stringResource(R.string.overlay_experiment))
-                Button(onClick = {
-                    try { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                    catch (_: ActivityNotFoundException) { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                }) { Text("Enable Instagram adapter (optional)") }
-                Text(if (sessionEnabled) "Instagram session enabled • used only after public resolution fails" else "Public resolution first • Instagram session disconnected")
-                Button(onClick = { login.launch(Intent(this@MainActivity, InstagramLoginActivity::class.java)) }) { Text("Connect Instagram (optional)") }
-                Button(onClick = {
-                    InstagramSession.enable(this@MainActivity, false)
-                    sessionEnabled = false
-                    if (io.github.ahmed9461.tapsave.download.SaveUiState.current?.active == true) startService(Intent(this@MainActivity, io.github.ahmed9461.tapsave.download.SaveService::class.java).setAction(io.github.ahmed9461.tapsave.download.SaveService.CANCEL))
+            TapSaveApp(permissions, sessionEnabled, clearing, message,
+                onPermission = ::openPermission,
+                onActive = { active ->
+                    message = null
+                    if (active) {
+                        OverlayPreferences(this).enabled = true
+                        try { startForegroundService(Intent(this, OverlayService::class.java)) }
+                        catch (_: RuntimeException) { message = getString(R.string.overlay_start_failed) }
+                    } else stopService(Intent(this, OverlayService::class.java))
+                },
+                onConnect = { login.launch(Intent(this, InstagramLoginActivity::class.java)) },
+                onDisconnect = {
+                    InstagramSession.enable(this, false); sessionEnabled = false; clearing = true
+                    if (SaveUiState.current?.active == true) startService(Intent(this, SaveService::class.java).setAction(SaveService.CANCEL))
                     Thread({
-                        val cleared = InstagramSession.clear(this@MainActivity)
-                        runOnUiThread { message = if (cleared) R.string.session_cleared else R.string.session_clear_failed }
+                        val cleared = InstagramSession.clear(this)
+                        runOnUiThread { clearing = false; message = getString(if (cleared) R.string.session_cleared else R.string.session_clear_failed) }
                     }, "TapSave-session-clear").start()
-                }) { Text("Disconnect / Clear Instagram session") }
-                Button(onClick = { openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION) }) {
-                    Text(stringResource(R.string.overlay_permission))
-                }
-                Button(onClick = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) }) {
-                    Text(stringResource(R.string.usage_permission))
-                }
-                Button(onClick = { openNotificationSettings() }) { Text(stringResource(R.string.notification_permission)) }
-                Button(enabled = canStart, onClick = {
-                    try {
-                        startForegroundService(Intent(this@MainActivity, OverlayService::class.java))
-                        message = R.string.overlay_started
-                    } catch (_: IllegalStateException) {
-                        message = R.string.overlay_start_failed
-                    } catch (_: SecurityException) {
-                        message = R.string.overlay_start_failed
-                    }
-                }) { Text(stringResource(R.string.start_overlay)) }
-                Button(onClick = {
-                    stopService(Intent(this@MainActivity, OverlayService::class.java))
-                    message = R.string.overlay_stopped
-                }) { Text(stringResource(R.string.stop_overlay)) }
-                message?.let { Text(stringResource(it)) }
-            }
+                },
+                onOpenVideo = { uri ->
+                    try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "video/mp4").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
+                    catch (_: ActivityNotFoundException) { message = "Open Movies/Tap Save in your gallery." }
+                },
+            )
         }
     }
-
-    override fun onResume() {
-        super.onResume()
-        canStart = OverlayService.canStart(this)
+    override fun onResume() { super.onResume(); refresh() }
+    private fun refresh() {
+        permissions = buildSet {
+            if (Settings.canDrawOverlays(this@MainActivity)) add(SetupPermission.FLOATING)
+            if (UsageForegroundContext.hasPermission(this@MainActivity)) add(SetupPermission.CONTEXT)
+            if (getSystemService(NotificationManager::class.java).areNotificationsEnabled()) add(SetupPermission.NOTIFICATIONS)
+            if (getSystemService(AccessibilityManager::class.java).getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+                    .any { it.resolveInfo.serviceInfo.packageName == packageName }) add(SetupPermission.REEL_LINK)
+        }
         sessionEnabled = InstagramSession.enabled(this)
     }
-
-    private fun openSettings(action: String) {
-        try {
-            startActivity(Intent(action, "package:$packageName".toUri()))
-        } catch (_: ActivityNotFoundException) {
-            message = R.string.settings_unavailable
+    private fun openPermission(permission: SetupPermission) {
+        val intent = when (permission) {
+            SetupPermission.FLOATING -> Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())
+            SetupPermission.CONTEXT -> Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, "package:$packageName".toUri())
+            SetupPermission.NOTIFICATIONS -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            SetupPermission.REEL_LINK -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         }
-    }
-
-    private fun openNotificationSettings() {
-        try {
-            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
-        } catch (_: ActivityNotFoundException) {
-            message = R.string.settings_unavailable
-        }
+        try { startActivity(intent) } catch (_: ActivityNotFoundException) { message = getString(R.string.settings_unavailable) }
     }
 }

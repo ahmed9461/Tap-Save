@@ -3,7 +3,7 @@
 ## Current state
 
 **Phase:** Foundation / technical validation
-**Status:** Owner reports some successful public Reel saves on the S22 Ultra. Version 0.3 adds opt-in current-Reel acquisition and optional local Instagram session fallbacks; build/lint, API 29/35/36 integrations and three anonymous live saves passed at `411ee70`. Real Instagram Arabic UI and authenticated-account acceptance remain open.
+**Status:** Owner reproduced `COPY_ACTION_FAILED` on Instagram 448.0.0.52.84 Arabic: the share sheet opens but Copy link is not activated. Treat direct acquisition as broken on the target phone despite prior fixture passes. Version 0.4 acquisition repair and actual Home/Settings/setup/overlay redesign are in progress; build and device evidence pending.
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 

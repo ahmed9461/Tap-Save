@@ -131,7 +131,7 @@ Before closing this plan:
 
 ## Non-goals
 
-- polished branding;
+- polished branding beyond the owner's explicitly requested actual Home/Settings/setup and floating-control refinement;
 - multiple social platforms;
 - bulk download;
 - complex settings;
@@ -143,3 +143,9 @@ Before closing this plan:
 - Implemented: explicit opt-in semantic current-Reel adapter, public-first/session-second native resolution, isolated actual Instagram login page and Disconnect/Clear, best available progressive variant, expired-link refresh, short-link normalization and safe diagnostics.
 - Verified at `411ee70`: build/strict lint; 18 JVM + 39 instrumentation tests per API 29/35/36, zero failures/errors/skips; three separate real anonymous Share saves for `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa`. Exact APK/hash and CI links are recorded in `PROJECT_STATUS.md` and `docs/TECHNICAL_SPIKE.md`. Direct current-Reel evidence uses a controlled Android UI fixture, not the production Instagram app.
 - Still required on owner device: production Arabic node tree, successive-Reel correctness, login and session fallback, original audio/quality, Samsung storage UX and OEM interruption. No new plan.
+
+### 2026-09-28 owner bug and production UI continuation
+
+- Owner rejected the 0.3 `COPY_ACTION_FAILED` behavior and development control panel. Direct acquisition is a confirmed target-device bug; preceding synthetic passes do not close it.
+- In progress: live node/action inspection, refreshed semantic selectors with actionable ancestors and bounded readiness retries, owned-sheet cleanup, focused Android 16 clipboard verification; actual Home/master switch, sequential setup, Settings/Advanced and native vector/progress overlay.
+- Reproduce the rejected action, run relevant regressions/full gates, inspect actual screen captures, deliver an APK, and record precisely what the connected S22 proves. Plan 0001 stays active.

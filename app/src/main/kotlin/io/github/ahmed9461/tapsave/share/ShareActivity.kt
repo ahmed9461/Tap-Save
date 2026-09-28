@@ -15,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import io.github.ahmed9461.tapsave.R
 import io.github.ahmed9461.tapsave.platform.pendingTarget
 import io.github.ahmed9461.tapsave.platform.ShareResult
-import io.github.ahmed9461.tapsave.ui.SpikeScreen
+import io.github.ahmed9461.tapsave.ui.ShareScreen
 import io.github.ahmed9461.tapsave.download.SaveFailure
 import io.github.ahmed9461.tapsave.download.SaveJournal
 import io.github.ahmed9461.tapsave.download.SavePhase
@@ -41,7 +41,7 @@ class ShareActivity : ComponentActivity() {
         startOnResume = savedInstanceState == null && intent.action == Intent.ACTION_SEND && result.pendingTarget() != null
         enableEdgeToEdge()
         setContent {
-            SpikeScreen {
+            ShareScreen {
                 when (val current = result) {
                     is ShareResult.Target, is ShareResult.RedirectLink -> {
                         val input = current.pendingTarget()!!
