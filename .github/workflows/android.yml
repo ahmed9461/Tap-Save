@@ -42,6 +42,15 @@ jobs:
         run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
       - name: Build, unit tests and lint
         run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Build standalone control diagnostic
+        if: matrix.api == 36
+        run: ./gradlew --no-daemon :device-probe:assembleDebug
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: matrix.api == 36
+        with:
+          name: device-control-diagnostic
+          path: device-probe/build/outputs/apk/debug/*.apk
+          retention-days: 7
       - name: Record runtime dependency graph
         run: ./gradlew --no-daemon :app:dependencies --configuration debugRuntimeClasspath > app/build/reports/runtime-dependencies.txt
       - name: Show lint diagnostics
