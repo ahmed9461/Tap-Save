@@ -1,6 +1,7 @@
 package io.github.ahmed9461.tapsave
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -59,6 +60,7 @@ class AppUiIntegrationTest {
     }
     private fun screenshot(name: String) {
         compose.waitForIdle()
-        captureUi(name)
+        captureUi(name, compose.onRoot().captureToImage(timeoutMillis = 5_000).asAndroidBitmap())
+        captureUi("$name-screen")
     }
 }

@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +33,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         refresh()
         setContent {
             TapSaveApp(permissions, sessionEnabled, clearing, message,

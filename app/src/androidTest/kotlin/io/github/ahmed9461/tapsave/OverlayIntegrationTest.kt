@@ -6,10 +6,14 @@ import android.content.Intent
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.view.inspector.WindowInspector
+import androidx.test.core.view.captureToBitmapAsync
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.ahmed9461.tapsave.overlay.OverlayService
 import io.github.ahmed9461.tapsave.overlay.OverlayWindow
+import io.github.ahmed9461.tapsave.overlay.FloatingSaveView
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -62,8 +66,10 @@ class OverlayIntegrationTest {
                 for ((state, glyph) in listOf("idle" to "↓", "busy" to "…", "progress" to "63%", "success" to "✓", "error" to "!")) {
                     scenario.onActivity { window.render(glyph, "Save current Reel") }
                     instrumentation.waitForIdleSync()
-                    SystemClock.sleep(100) // Allow a rendered frame before the visual-review capture.
-                    captureUi("overlay-$state")
+                    val view = WindowInspector.getGlobalWindowViews().filterIsInstance<FloatingSaveView>().single()
+                    // PixelCopy waits for this actual native window's new frame, instead
+                    // of capturing a preceding display frame or the system clipboard preview.
+                    captureUi("overlay-$state", view.captureToBitmapAsync().get(5, TimeUnit.SECONDS))
                 }
             } finally {
                 scenario.onActivity {

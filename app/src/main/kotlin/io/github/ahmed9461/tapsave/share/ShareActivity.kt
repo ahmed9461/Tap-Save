@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,7 +40,7 @@ class ShareActivity : ComponentActivity() {
         }
         if (intent.action == SaveService.VIEW) result = SaveUiState.current?.target?.let(ShareResult::Target) ?: ShareResult.Invalid
         startOnResume = savedInstanceState == null && intent.action == Intent.ACTION_SEND && result.pendingTarget() != null
-        enableEdgeToEdge()
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         setContent {
             ShareScreen {
                 when (val current = result) {
