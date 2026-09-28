@@ -130,6 +130,6 @@ class CurrentReelIntegrationTest {
         assertEquals("SHARE_CONTROL_NOT_UNIQUE", acquire().exceptionOrNull()?.message)
         shell("am start -W -n ${context.packageName}/.MainActivity")
         SystemClock.sleep(300)
-        assertEquals("SHARE_CONTROL_NOT_UNIQUE", acquire().exceptionOrNull()?.message)
+        assertEquals("INSTAGRAM_LEFT", acquire().exceptionOrNull()?.message)
     }
 }

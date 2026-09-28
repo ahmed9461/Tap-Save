@@ -18,6 +18,7 @@ class FloatingSaveView(context: Context) : View(context) {
         private set
     private var progress = 0f
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+    private val ring = RectF()
     private val icon = context.getDrawable(R.drawable.ic_download)!!
     private val mint = Color.rgb(53, 230, 167)
     private val ink = Color.rgb(11, 16, 24)
@@ -45,7 +46,7 @@ class FloatingSaveView(context: Context) : View(context) {
         paint.color = ink; paint.strokeWidth = 2.4f * unit; paint.style = Paint.Style.STROKE
         if (state == State.BUSY || state == State.PROGRESS) {
             paint.color = Color.argb(45, 11, 16, 24)
-            val ring = RectF(4 * unit, 4 * unit, d - 4 * unit, d - 4 * unit)
+            ring.set(4 * unit, 4 * unit, d - 4 * unit, d - 4 * unit)
             canvas.drawOval(ring, paint)
             paint.color = ink
             val start = if (state == State.BUSY) (SystemClock.uptimeMillis() % 1_200) * .3f else -90f
