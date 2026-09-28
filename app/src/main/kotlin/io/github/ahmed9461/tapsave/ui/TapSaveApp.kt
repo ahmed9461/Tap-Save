@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
@@ -51,6 +52,7 @@ fun TapSaveApp(
     onLanguage: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val preferences = remember { OverlayPreferences(context) }
     val setup = remember { context.getSharedPreferences("setup", android.content.Context.MODE_PRIVATE) }
     var page by rememberSaveable { mutableStateOf(if (setup.getBoolean("seen", false)) "home" else "setup") }
@@ -60,9 +62,9 @@ fun TapSaveApp(
     var advanced by rememberSaveable { mutableStateOf(false) }
     fun diagnostics(): String {
         val state = SaveUiState.current ?: SaveJournal(context).read()
-        return AcquisitionDiagnostics.read(context) + "\n\n" + context.getString(R.string.latest_download_diagnostic, listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · "))
+        return AcquisitionDiagnostics.read(context) + "\n\n" + resources.getString(R.string.latest_download_diagnostic, listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · "))
     }
-    var report by remember { mutableStateOf(diagnostics()) }
+    var report by remember(resources) { mutableStateOf(diagnostics()) }
     val missing = SetupPermission.entries.filterNot { it in permissions }
     val pageScroll = key(page) { rememberScrollState() }
     val saved = SaveUiState.current ?: remember { SaveJournal(context).read()?.takeUnless { it.active } }
@@ -183,7 +185,7 @@ fun TapSaveApp(
                                 Text(stringResource(R.string.diagnostics_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 SelectionContainer { Text(report, style = MaterialTheme.typography.bodySmall) }
                                 Row {
-                                    TextButton(onClick = { context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(context.getString(R.string.diagnostics), report)) }) { Text(stringResource(R.string.copy_report)) }
+                                    TextButton(onClick = { context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(resources.getString(R.string.diagnostics), report)) }) { Text(stringResource(R.string.copy_report)) }
                                     TextButton(onClick = { AcquisitionDiagnostics.clear(context); report = AcquisitionDiagnostics.read(context) }) { Text(stringResource(R.string.clear)) }
                                 }
                             }

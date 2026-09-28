@@ -1,6 +1,5 @@
 package io.github.ahmed9461.tapsave
 
-import io.github.ahmed9461.tapsave.R
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
