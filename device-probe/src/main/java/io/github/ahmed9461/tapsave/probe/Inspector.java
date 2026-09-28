@@ -16,8 +16,23 @@ public class Inspector extends Instrumentation {
         return label(n.getText()) || label(n.getContentDescription());
     }
     private boolean label(CharSequence v) {
-        String s = v == null ? "" : v.toString().trim();
+        String s = v == null ? "" : v.toString().replaceAll("[\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069]", "").trim();
         return s.equals("نسخ الرابط") || s.equalsIgnoreCase("Copy link");
+    }
+    private List<AccessibilityNodeInfo> controls(AccessibilityNodeInfo root, boolean isCopy) {
+        ArrayDeque<AccessibilityNodeInfo> queue = new ArrayDeque<>(); queue.add(root);
+        List<AccessibilityNodeInfo> found = new ArrayList<>(); int count = 0;
+        while (!queue.isEmpty() && count++ < 400) {
+            AccessibilityNodeInfo n = queue.removeFirst();
+            if (!"com.instagram.android".contentEquals(n.getPackageName()) || !n.isVisibleToUser()) continue;
+            String text = String.valueOf(n.getText()); String desc = String.valueOf(n.getContentDescription());
+            String id = String.valueOf(n.getViewIdResourceName());
+            boolean share = text.equals("مشاركة") || desc.equals("مشاركة") || text.equalsIgnoreCase("Share") || desc.equalsIgnoreCase("Share") ||
+                ((text.equals("إرسال") || desc.equals("إرسال")) && (id.contains("share") || id.contains("clips")));
+            if (isCopy ? copy(n) : share) found.add(n);
+            for (int i = 0; i < Math.min(n.getChildCount(), 400); i++) { AccessibilityNodeInfo c = n.getChild(i); if (c != null) queue.add(c); }
+        }
+        return found;
     }
     private String properties(AccessibilityNodeInfo n) {
         List<Integer> actions = new ArrayList<>();
@@ -36,6 +51,20 @@ public class Inspector extends Instrumentation {
             if (root == null || !"com.instagram.android".contentEquals(root.getPackageName())) {
                 report.append("Instagram is not the active window; no tree read.");
             } else {
+                if ("legacyCopy".equals(arguments.getString("operation")) && controls(root, true).isEmpty()) {
+                    List<AccessibilityNodeInfo> shares = controls(root, false);
+                    report.append("share_matches=").append(shares.size()).append('\n');
+                    if (shares.size() == 1) {
+                        AccessibilityNodeInfo n = shares.get(0);
+                        for (int i = 0; n != null && i < 4; i++, n = n.getParent()) {
+                            if (n.isClickable()) { report.append("share_click=").append(n.performAction(AccessibilityNodeInfo.ACTION_CLICK)).append('\n'); break; }
+                        }
+                        long end = android.os.SystemClock.uptimeMillis() + 5000;
+                        do { android.os.SystemClock.sleep(100); root = ui.getRootInActiveWindow(); }
+                        while (root != null && controls(root, true).isEmpty() && android.os.SystemClock.uptimeMillis() < end);
+                    }
+                }
+                if (root == null || !"com.instagram.android".contentEquals(root.getPackageName())) throw new IllegalStateException();
                 ArrayDeque<AccessibilityNodeInfo> queue = new ArrayDeque<>(); queue.add(root);
                 List<AccessibilityNodeInfo> matches = new ArrayList<>(); int count = 0;
                 while (!queue.isEmpty() && count++ < 400) {
