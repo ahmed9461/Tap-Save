@@ -57,7 +57,7 @@ Instagram Share → Tap Save reaches a normalized target reliably.
 
 ## Step 4 — Current Reel identification research
 
-**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. An opt-in Instagram-only semantic Share → Copy link adapter is now implemented after owner authorization. It is bounded, inactive between taps, has Arabic/English labels, and uses a focused fresh-clipboard handoff. The actual floating-button-to-MediaStore path passed on an Arabic disposable fixture across API 29/35/36 at `411ee70`; English acquisition also passed. This tests Android mechanics; real Instagram 448.0.0.52.84 Arabic acceptance remains open (D-015).
+**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. An opt-in Instagram-only semantic Share → Copy link adapter is implemented after owner authorization. It is bounded, inactive between taps, has Arabic/English labels, and uses a focused fresh-clipboard handoff. Version 0.4 reproduces the actual Instagram 448 Arabic decorative-image rejection and selects the supported containing tile (D-017). The actual floating-button-to-MediaStore path, English/Arabic, nested/rejected actions and cleanup passed controlled API 29/35/36 tests at `e8fbf58`. Complete new-app Samsung clipboard/save and successive-Reel acceptance remain open.
 
 Test approaches in order from least invasive to most invasive.
 
@@ -117,7 +117,7 @@ A requested download is robust across ordinary activity lifecycle changes and ap
 
 ## Step 7 — Review
 
-**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph and failure UX. Final 0.3 application/test code at `411ee70` passed build/strict lint, 18 JVM tests and 39 instrumentation tests per API 29/35/36 job (CI `36354556280`), plus three separate live public-Reel save tests on API 36 (CI `36354557958`). No production dependency added. Real-device save/overlay acceptance, real Instagram acquisition/session acceptance and battery measurements remain outstanding. Short-link resolution is implemented with controlled redirect tests. Plan stays active; no new plan created.
+**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph, failure UX and rendered actual UI. Final 0.4 application/test code at `e8fbf58` passed build/strict lint, 19 JVM tests and 44 instrumentation tests per API 29/35/36 job (CI `36422892820`). Three separate live public-Reel save tests passed on API 36 at `3e5f0e5` (CI `36419880160`); subsequent changes only affect system bars, capture and CI. No production dependency added. Complete Samsung acquisition/save, real account session, OEM lifecycle and battery measurements remain outstanding. Plan stays active; no new plan created.
 
 Before closing this plan:
 
@@ -142,11 +142,12 @@ Before closing this plan:
 
 - Implemented: explicit opt-in semantic current-Reel adapter, public-first/session-second native resolution, isolated actual Instagram login page and Disconnect/Clear, best available progressive variant, expired-link refresh, short-link normalization and safe diagnostics.
 - Verified at `411ee70`: build/strict lint; 18 JVM + 39 instrumentation tests per API 29/35/36, zero failures/errors/skips; three separate real anonymous Share saves for `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa`. Exact APK/hash and CI links are recorded in `PROJECT_STATUS.md` and `docs/TECHNICAL_SPIKE.md`. Direct current-Reel evidence uses a controlled Android UI fixture, not the production Instagram app.
-- Still required on owner device: production Arabic node tree, successive-Reel correctness, login and session fallback, original audio/quality, Samsung storage UX and OEM interruption. No new plan.
+- The later 0.4 continuation below establishes the production Arabic Copy node/action tree. Still required on owner device: complete focused handoff, successive-Reel correctness, login and session fallback, original audio/quality, Samsung storage UX and OEM interruption. No new plan.
 
 ### 2026-09-28 owner bug and production UI continuation
 
 - Owner rejected the 0.3 `COPY_ACTION_FAILED` behavior and development control panel. Direct acquisition is a confirmed target-device bug; preceding synthetic passes do not close it.
-- In progress: live node/action inspection, refreshed semantic selectors with actionable ancestors and bounded readiness retries, owned-sheet cleanup, focused Android 16 clipboard verification; actual Home/master switch, sequential setup, Settings/Advanced and native vector/progress overlay.
-- Reproduce the rejected action, run relevant regressions/full gates, inspect actual screen captures, deliver an APK, and record precisely what the connected S22 proves. Plan 0001 stays active.
-- Completed live control gate: the actual Arabic Copy image rejected ACTION_CLICK; its supported containing tile accepted ACTION_CLICK. The production selector now follows the supported parent and stops at the observed share-row boundary. Full new-app clipboard/MediaStore and UI validation are still required; do not equate this isolated control proof with completion.
+- Completed implementation: live node/action inspection, refreshed semantic selectors with actionable ancestors and bounded event-driven readiness retries, owned-sheet cleanup, focused clipboard activity; actual Home/master switch, sequential setup, Settings/Advanced and native vector/progress overlay. Share remains independent.
+- Completed live control gate: the actual Arabic Copy image rejected ACTION_CLICK; its supported containing tile accepted ACTION_CLICK. The production selector follows the supported parent and stops at the observed share-row boundary. The owner disconnected before 0.4 installation; complete new-app Samsung clipboard/MediaStore acceptance remains required.
+- Completed automated/visual gate: `e8fbf58` passed assembly/strict lint, 19 JVM + 44 instrumentation tests per API 29/35/36 with zero failures/errors/skips; real activity and native overlay captures reviewed. Unchanged save pipeline passed three anonymous live Share saves at `3e5f0e5`. Tested 0.4 APK, checksum, evidence metadata and Arabic phone checklist delivered; exact source/artifact hashes in `PROJECT_STATUS.md` and `docs/TECHNICAL_SPIKE.md`.
+- Next: full ↓ → fresh current-Reel link → saved matching media on Samsung, including automatic sheet restoration, then session/quality/lifecycle/battery acceptance. No phone installation or session reset occurred. Keep Plan 0001 active.

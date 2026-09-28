@@ -3,31 +3,34 @@
 ## Current state
 
 **Phase:** Foundation / technical validation
-**Status:** Owner reproduced `COPY_ACTION_FAILED` on Instagram 448.0.0.52.84 Arabic: the share sheet opens but Copy link is not activated. Treat direct acquisition as broken on the target phone despite prior fixture passes. Version 0.4 acquisition repair and actual Home/Settings/setup/overlay redesign are in progress; build and device evidence pending.
+
+**Status:** Version 0.4 control repair and actual Home/Settings/setup/overlay UI implemented, built and tested. The real Samsung Copy action failure was reproduced and its supported parent action verified. Complete new-app acquisition through focused clipboard and saving still requires phone acceptance.
+
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
+
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
-**Current phone finding:** The isolated ADB diagnostic reproduced the decorative Copy image's rejected ACTION_CLICK (`false`) and the supported containing tile's accepted ACTION_CLICK (`true`) on the actual S22/Instagram 448 Arabic UI. Production dispatch now checks supported actions and walks to that tile. The complete new-app focused clipboard/save path and redesigned screens still need their final gates.
+The owner disconnected the S22 Ultra for personal use before 0.4 installation. No owner app, settings or session was replaced or cleared. Continue without assuming ADB availability.
 
 ## Implemented
 
-- One shipping Kotlin/Compose application module (plus a separate disposable UI fixture) with a pinned, verified stable toolchain and build/test/lint CI.
-- Defensive text share receiver: canonical Reel target, distinct short share link, invalid/ambiguous input recovery. No optional permissions required for Share.
-- Native movable overlay experiment with persisted position, explicit foreground session and Stop controls. Optional usage access supplies approximate app context. An opt-in, Instagram-only accessibility adapter now attempts Share → Copy link on a tap; no idle tree reads.
-- JVM regression tests and API 29/35/36 instrumentation coverage for the risky entry points/lifecycle; evidence is tracked in `docs/TECHNICAL_SPIKE.md`.
+- Native public-first Reel resolution with page/embed/post-permalink fallbacks, optional isolated Instagram session, best available combined video/audio, expired-link refresh and specific safe failure categories.
+- Independent Share → Tap Save path with progress/cancellation, one immediate transfer, pending MediaStore publication under `Movies/Tap Save/`, deduplication and cleanup/recovery.
+- Opt-in Instagram-only acquisition after a floating-button tap: semantic controls, supported action/ancestor selection, event-driven bounded readiness/retries, owned-sheet cleanup and a focused fresh-clipboard handoff. No coordinates or background clipboard reading.
+- Real Home with one master switch, sequential permission setup and Settings/Advanced. Native circular draggable control has vector, spinner, progress, success/error states and size/opacity/reset settings. No production dependency added.
+- Separate disposable emulator fixture and standalone phone control probe; neither ships with Tap Save.
 
-## Verification and limitations
+## Verified
 
-- Version 0.3 clean-checkout build, strict lint, **18 JVM + 39 instrumentation tests per API 29/35/36 job** passed at `411ee70` in CI `36354556280`, with zero failures/errors/skips. Coverage includes actual floating-button activation on the Arabic fixture through HTTP/MediaStore, English acquisition, stale/ambiguous/other-app rejection, session cookie boundaries/clear, resolver fallbacks, expiry refresh, cancellation and lifecycle/storage recovery.
-- Owner confirmed Usage Access, overlay visibility in Instagram and receipt of `Dc_WBLAuR7M` on the S22 Ultra / Android 16. Drag/rotation, hide/show transitions, lock, OEM interruption remain unverified; owner reports some actual public phone saves, with failures on other public Reels.
-- Native Share save pipeline: public page/embed/post-permalink metadata, HTTPS transfer, progress/cancellation, pending MediaStore publication, one active job and retry/recovery. Short share links now resolve before media identity/storage allocation; direct acquisition is implemented but not yet accepted against the production Instagram UI.
-- Live CI `36354557958` at `411ee70` saved **DGOSAUyC903, Cop84x6u7CP and CDUMkliABpa** through the real Share activity/service on API 36, anonymously and without resolver/transport overrides. Each published output passed video/audio metadata, nonzero size/duration and frame decoding; tests removed only their own outputs. This is three-sample live Android evidence, not universal Instagram compatibility or Samsung acceptance.
-- Native INTERNET/dataSync permissions added; no embedded extraction engine, cloud features or analytics. Optional Instagram login uses an isolated native WebView profile, with local session cookies and Disconnect/Clear.
+- **Actual S22 / Android 16 / Instagram 448.0.0.52.84 Arabic:** Copy's ImageView claims clickable but omits ACTION_CLICK; clicking it returned false. Its enclosing LinearLayout two parents up supports ACTION_CLICK and returned true. This establishes the reported failure and supported dispatch, not full 0.4 clipboard/save acceptance.
+- **Final source `e8fbf58`:** [CI `36422892820`](https://github.com/ahmed9461/Tap-Save/actions/runs/36422892820) passed assembly, strict lint, **19 JVM + 44 instrumentation tests on each API 29/35/36**, zero failures/errors/skips. Coverage includes realistic rejected/nested action controls, acquisition/cleanup through HTTP/MediaStore, UI, resolver/session, cancellation and lifecycle/storage regressions. Actual rendered screens and all native floating-control states were visually reviewed.
+- **Live Share pipeline at `3e5f0e5`:** [CI `36419880160`](https://github.com/ahmed9461/Tap-Save/actions/runs/36419880160) saved `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa` anonymously through production resolver/HTTP/MediaStore on API 36. All three passed audio/video metadata and frame decoding, then removed only their test outputs. Later changes through `e8fbf58` affect system bars/capture/CI only; acquisition/resolver/transfer/storage code is unchanged. This is three-sample evidence, not universal compatibility.
+- Owner previously confirmed Usage Access, overlay visibility, Share URL receipt and some public phone saves. Actual account login/session benefit, successive-Reel correctness, Samsung playback/quality, OEM interruption and battery remain open.
 
 ## Next milestone
 
-Test the verified 0.3 development APK on Samsung SM-S908U1 / Android 16, Instagram 448.0.0.52.84 in Arabic: direct ↓ on successive Reels, independent Share, public resolution, optional login fallback, quality/audio, cancellation/success/errors and Disconnect. Do not equate synthetic accessibility controls with Instagram compatibility. Plan 0001 remains active.
+When the phone is available, test 0.4 on Samsung SM-S908U1 / Android 16, Instagram 448 Arabic: direct ↓ on successive Reels including focused clipboard handoff and sheet restoration, independent Share, optional session/Disconnect, audio/quality, progress/cancel/error and overlay lifecycle. Plan 0001 stays active. The temporary `io.github.ahmed9461.tapsave.probe` package remains installed; remove it when practical.
 
-## Verified device build
+## Device test build
 
-Source `411ee70d79b48e779b0a06a6a7e03b292eee4d05`; live-job artifact `10943980658`; APK **29,709,819 bytes**, SHA-256 `155ab82f2376960a11d27d33e87a62d25f9b4788d626f796a8d9131e14524ce3`. No production dependency added. This CI debug signer differs from the previous delivered build; replacing that development installation clears its app settings/session. APK, checksum and phone checklist are in the task outputs.
+Source `e8fbf5888c4a8414462a514b1a457561aaf9b499`; API 36 artifact `10970244215`; APK **29,855,521 bytes**, SHA-256 `9b7ebc57a5c9e4caec72a5a24d2f684ba97a52ba82c3f3fd8ccbd249b1c4eafc`. APK, checksum, verification metadata and Arabic phone checklist are in task outputs. The verified CI debug signer differs from the installed phone build; Android cannot update it in place, and replacement installation clears app settings/session. No replacement was performed.
