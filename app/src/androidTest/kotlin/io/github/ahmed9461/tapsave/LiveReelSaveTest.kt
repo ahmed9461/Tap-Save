@@ -14,10 +14,10 @@ import org.junit.Test
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
-annotation class LiveNetwork
+annotation class ManualGate
 
 /** Explicit workflow-dispatch gate, excluded from deterministic CI. Never downloads an arbitrary URL. */
-@LiveNetwork
+@ManualGate
 class LiveReelSaveTest {
     @Test fun ownerReelShareSavesPlayableVideoAndAudio() = saveReel(InstrumentationRegistry.getArguments().getString("liveReel")!!)
     @Test fun secondPublicReelShareSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/Cop84x6u7CP/")

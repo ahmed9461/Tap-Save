@@ -26,7 +26,7 @@ if "package:" in existing.stdout:
 subprocess.run(["./gradlew", "--no-daemon", ":instagram-fixture:assembleDebug"], check=True)
 subprocess.run(["adb", "install", "instagram-fixture/build/outputs/apk/debug/instagram-fixture-debug.apk"], check=True)
 base = ["./gradlew", "--no-daemon", ":app:connectedDebugAndroidTest"]
-gate = subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.LiveNetwork,io.github.ahmed9461.tapsave.ReleaseUpgrade"])
+gate = subprocess.run(base + ["-Pandroid.testInstrumentationRunnerArguments.notAnnotation=io.github.ahmed9461.tapsave.ManualGate"])
 gate.check_returncode()
 for name in ("setup", "home", "settings", "overlay-idle", "overlay-progress", "overlay-success", "overlay-error"):
     if not list(Path("app/build/outputs").rglob(f"{name}.png")):

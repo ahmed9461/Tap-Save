@@ -7,12 +7,8 @@ import io.github.ahmed9461.tapsave.storage.MediaStoreVideoWriter
 import org.junit.Assert.*
 import org.junit.Test
 
-@Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.CLASS)
-annotation class ReleaseUpgrade
-
 /** Invoked twice around adb install -r on a disposable emulator, never on an owner device. */
-@ReleaseUpgrade
+@ManualGate
 class ReleaseUpgradeTest {
     @Test fun retainedSettingsAndOwnedMediaAcrossSignedUpdate() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
