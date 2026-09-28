@@ -2,35 +2,29 @@
 
 ## Current state
 
-**Phase:** Foundation / technical validation
-
-**Status:** Owner reports 0.4 works very well with no problems observed. Arabic localization and persistent personal-release signing are implemented for 0.5; build, Arabic visual and same-key update verification are pending. Detailed account-session/OEM/battery stress gates are not implied by the general acceptance report.
+**Status:** Owner accepted normal 0.4 use with no observed problems. Version 0.5 adds verified Arabic/RTL and a persistent signed personal release; same-key update/data-retention gate passed.
 
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 
 **Review:** Draft PR #1, branch `codex/foundation-instagram-spike`.
 
-The owner disconnected the S22 Ultra for personal use before 0.4 installation. No owner app, settings or session was replaced or cleared. Continue without assuming ADB availability.
+## Version 0.5
 
-## Implemented
+- All 112 translatable app strings have Arabic resources, including setup, Settings, Share, notifications, errors, login chrome and accessibility labels; setup counts cover Arabic plural forms. Brand/folder identity and diagnostic codes remain stable.
+- Arabic follows device locale on API 29+, and Android 13+ offers a per-app language selector from Settings. Actual RTL Home/setup/Settings captures were reviewed. No dependency or custom font added.
+- Non-debuggable release uses one protected RSA-3072 signing identity and an increasing version code from `app/version.properties`. Encrypted GitHub secrets and two protected owner-local copies retain the key. Only the public certificate/fingerprint is in Git. Never distribute ephemeral debug APKs as personal updates; see `docs/SIGNING.md`.
+- Instagram acquisition, resolver, transfer and storage behavior accepted in 0.4 is unchanged apart from localized presentation.
 
-- Native public-first Reel resolution with page/embed/post-permalink fallbacks, optional isolated Instagram session, best available combined video/audio, expired-link refresh and specific safe failure categories.
-- Independent Share → Tap Save path with progress/cancellation, one immediate transfer, pending MediaStore publication under `Movies/Tap Save/`, deduplication and cleanup/recovery.
-- Opt-in Instagram-only acquisition after a floating-button tap: semantic controls, supported action/ancestor selection, event-driven bounded readiness/retries, owned-sheet cleanup and a focused fresh-clipboard handoff. No coordinates or background clipboard reading.
-- Real Home with one master switch, sequential permission setup and Settings/Advanced. Native circular draggable control has vector, spinner, progress, success/error states and size/opacity/reset settings. No production dependency added.
-- Separate disposable emulator fixture and standalone phone control probe; neither ships with Tap Save.
+## Verification
 
-## Verified
+- Source `902ceae1fe65822958191c3732a88a368c3864bc`: [Android CI 36443683479](https://github.com/ahmed9461/Tap-Save/actions/runs/36443683479) passed build, strict lint, **19 JVM + 46 instrumentation tests on each API 29/35/36**, zero failures/errors/skips. Arabic resources/plurals passed across the matrix; native per-app locale/recreation and actual RTL UI were exercised on API 35/36.
+- [Signed release CI 36443689015](https://github.com/ahmed9461/Tap-Save/actions/runs/36443689015) passed release assembly/lint, signature/package/version/non-debuggable checks, and two phases of the API 36 update test. A same-key baseline at version code 4 was replaced by code 5 using `adb install -r`; settings and exact app-owned video bytes survived. Baseline and candidate use the same source; this proves future same-key updates, not migration from the old unrelated debug key.
+- The earlier live public samples and owner 0.4 acceptance remain recorded in `docs/TECHNICAL_SPIKE.md`; no new Instagram network/account acceptance is claimed for this localization/signing change.
 
-- **Actual S22 / Android 16 / Instagram 448.0.0.52.84 Arabic:** Copy's ImageView claims clickable but omits ACTION_CLICK; clicking it returned false. Its enclosing LinearLayout two parents up supports ACTION_CLICK and returned true. This establishes the reported failure and supported dispatch, not full 0.4 clipboard/save acceptance.
-- **Final source `e8fbf58`:** [CI `36422892820`](https://github.com/ahmed9461/Tap-Save/actions/runs/36422892820) passed assembly, strict lint, **19 JVM + 44 instrumentation tests on each API 29/35/36**, zero failures/errors/skips. Coverage includes realistic rejected/nested action controls, acquisition/cleanup through HTTP/MediaStore, UI, resolver/session, cancellation and lifecycle/storage regressions. Actual rendered screens and all native floating-control states were visually reviewed.
-- **Live Share pipeline at `3e5f0e5`:** [CI `36419880160`](https://github.com/ahmed9461/Tap-Save/actions/runs/36419880160) saved `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa` anonymously through production resolver/HTTP/MediaStore on API 36. All three passed audio/video metadata and frame decoding, then removed only their test outputs. Later changes through `e8fbf58` affect system bars/capture/CI only; acquisition/resolver/transfer/storage code is unchanged. This is three-sample evidence, not universal compatibility.
-- Owner previously confirmed Usage Access, overlay visibility, Share URL receipt and some public phone saves. Actual account login/session benefit, successive-Reel correctness, Samsung playback/quality, OEM interruption and battery remain open.
+## Delivery and remaining boundaries
 
-## Next milestone
+Version 0.5.0, code 5, **23,211,148 bytes**, SHA-256 `e901ddc1c3de5d0db174c2acaa7b3b4ec3793018ca02770fc6897d98b73c2225`. Certificate SHA-256 `c047a8350f478a6dd72b4000b40a958dac992cbbeb3294a17e8a12bf0ed521ae`. APK/checksum/evidence, Arabic screenshots and installation notes are in task outputs; private key backup is separate and access-restricted.
 
-When the phone is available, test 0.4 on Samsung SM-S908U1 / Android 16, Instagram 448 Arabic: direct ↓ on successive Reels including focused clipboard handoff and sheet restoration, independent Share, optional session/Disconnect, audio/quality, progress/cancel/error and overlay lifecycle. Plan 0001 stays active. The temporary `io.github.ahmed9461.tapsave.probe` package remains installed; remove it when practical.
+The old 0.4 private CI key was not retained and cannot be recovered from its APK; its certificate differs from the new key. Moving to 0.5 requires one replacement installation with app settings/session reset. Later releases signed with this retained identity update in place. No owner-device install/uninstall/reset occurred during this task.
 
-## Device test build
-
-Source `e8fbf5888c4a8414462a514b1a457561aaf9b499`; API 36 artifact `10970244215`; APK **29,855,521 bytes**, SHA-256 `9b7ebc57a5c9e4caec72a5a24d2f684ba97a52ba82c3f3fd8ccbd249b1c4eafc`. APK, checksum, verification metadata and Arabic phone checklist are in task outputs. The verified CI debug signer differs from the installed phone build; Android cannot update it in place, and replacement installation clears app settings/session. No replacement was performed.
+Normal owner use is accepted; detailed actual account-session benefit/clear, OEM interruption/force-stop and battery measurements remain separate unmeasured gates. Arabic visual acceptance on the S22 can be checked after installation. Plan 0001 stays active; no new plan was created. Temporary standalone probe removal remains deferred until the phone is available.

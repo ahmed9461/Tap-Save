@@ -1,12 +1,5 @@
 # DECISIONS
 
-## D-018 — Native Arabic localization and persistent personal signing
-
-**Status:** Implemented; 0.5 automated/visual/update gates pending.
-**Decision:** Use complete English defaults plus Arabic Android string/plural resources and existing RTL-aware Compose/native layouts. Follow device locale on API 29+, with Android's per-app language settings on API 33+. Keep brand/folder names and diagnostic protocol codes stable. No extra locale/UI dependency. See [Android localization](https://developer.android.com/guide/topics/resources/localization) and [per-app languages](https://developer.android.com/guide/topics/resources/app-languages).
-
-**Signing:** Retain one RSA-3072/40-year PKCS12 identity locally and in encrypted repository Actions secrets. Check only the public certificate/fingerprint into Git; verify every delivered release against it. Use a non-debuggable release, increasing version codes, explicit signing configuration and an emulator replacement-install/data-retention gate. Manual signing never runs with PR secrets or generates keys. The 0.4 ephemeral private key is unavailable; the local debug key has a different fingerprint, so a one-time replacement is unavoidable before stable-key updates. Owner device removal/reset is not automated. Operational details and primary sources are in `SIGNING.md`.
-
 Durable project decisions are recorded here. Change an existing decision only when evidence justifies it; append a replacement decision rather than silently rewriting history.
 
 ## D-001 — Android-first, Android-only initial product
@@ -114,3 +107,12 @@ Durable project decisions are recorded here. Change an existing decision only wh
 **Bounds and handoff:** Superseding D-015's initial eight-second request, 0.4 allows 12 seconds for event-driven control readiness with at most four rejected-action attempts, 1.5 seconds to restore its sheet, and 3 seconds for the focused handoff. A transient absent root is retried within the deadline; an actual different foreground package is rejected. Never read the clipboard from the background overlay/service. Focus/presence/freshness stages are logged without clip contents; a successful isolated Copy click is not proof that the full Samsung clipboard/save path works.
 
 **Validation:** Final 0.4 source `e8fbf58` passed assembly/strict lint and 19 JVM + 44 instrumentation tests per API 29/35/36 (CI `36422892820`), including faithful decorative-image rejection, supported ancestors, delayed readiness and sheet cleanup. Actual Home/setup/Settings and native idle/busy/progress/success/error captures were reviewed. Live CI `36419880160` saved three public Reels with audio/video and decoded frames at `3e5f0e5`; only system-bar/capture/CI changes followed. APK growth over 0.3 is 145,702 bytes (about 142.3 KiB), with no new production dependency. These are debug artifact sizes, not release/startup benchmarks. The owner disconnected before 0.4 installation; full Samsung focused clipboard/save and account-session acceptance remain open.
+
+## D-018 — Native Arabic localization and persistent personal signing
+
+**Status:** Accepted; Arabic and same-key signed update gates verified.
+**Decision:** Use complete English defaults plus Arabic Android string/plural resources and existing RTL-aware Compose/native layouts. Follow device locale on API 29+, with Android's per-app language settings on API 33+. Keep brand/folder names and diagnostic protocol codes stable. No extra locale/UI dependency. See [Android localization](https://developer.android.com/guide/topics/resources/localization) and [per-app languages](https://developer.android.com/guide/topics/resources/app-languages).
+
+**Signing:** Retain one RSA-3072/40-year PKCS12 identity locally and in encrypted repository Actions secrets. Check only the public certificate/fingerprint into Git; verify every delivered release against it. Use a non-debuggable release, increasing version codes, explicit signing configuration and an emulator replacement-install/data-retention gate. Manual signing never runs with PR secrets or generates keys. The 0.4 ephemeral private key is unavailable; the local debug key has a different fingerprint, so a one-time replacement is unavoidable before stable-key updates. Owner device removal/reset is not automated. Operational details and primary sources are in `SIGNING.md`.
+
+**D-018 validation:** Source `902ceae` passed 19 JVM + 46 instrumentation tests per API 29/35/36 and strict lint (CI `36443683479`). Real Arabic Home/setup/Settings and mirrored controls were visually reviewed. Signed release CI `36443689015` verified the retained certificate and non-debuggable APK, then replaced version code 4 with 5 without clearing settings or app-owned video. No production dependency changed. Actual old-key 0.4 migration remains a one-time replacement, not a successful in-place update claim.

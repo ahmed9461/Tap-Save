@@ -1,12 +1,5 @@
 # PROGRESS_LOG
 
-## 2026-09-28 — Arabic and persistent personal signing started
-
-- Owner confirmed normal 0.4 use with no observed problems, then requested Arabic and future updates without uninstalling.
-- Moved hard-coded app chrome into Android resources; added 112 Arabic strings, all plural forms, RTL and an Android 13+ app-language settings entry. Kept selectors, resolver/storage and branding/folder identity unchanged.
-- Created and locally backed up one RSA-3072/40-year PKCS12 identity with restricted filesystem access; uploaded only sealed encrypted secrets through GitHub's repository secrets API. Public fingerprint is checked in; private material is ignored and excluded from artifacts. Local debug key does not match delivered 0.4, whose ephemeral private key was not retained.
-- Added explicit non-debuggable signed builds and a disposable-emulator update/data-retention gate. Build, Arabic visual checks and signed update validation are pending; no phone installation or deletion performed.
-
 ## 2026-09-27 — Real public Reel saved through the Android Share pipeline
 
 - Code `03a5d1f`: build/strict lint, 16 JVM + 26 instrumentation tests per API 29/35/36 job passed (CI `36277332969`). Separate live CI `36277332176` saved `DGOSAUyC903` through the real API 36 Share activity/service, verified published video/audio and decoded a frame. No resolver/transport fixture override in that live test.
@@ -139,3 +132,17 @@ Captured API 36 logcat identified the cleanup false positive: Android's automati
 - Live CI `36419880160` at `3e5f0e5` passed three anonymous public Share saves (`DGOSAUyC903`, `Cop84x6u7CP`, `CDUMkliABpa`) with audio/video metadata and frame decoding. Later source changes affect system bars/capture/CI only; acquisition/resolver/transfer/storage code is unchanged.
 - Delivered 0.4 APK from final API 36 artifact `10970244215`: 29,855,521 bytes, SHA-256 `9b7ebc57a5c9e4caec72a5a24d2f684ba97a52ba82c3f3fd8ccbd249b1c4eafc`, with checksum, verification metadata and Arabic device checklist. Archive integrity and signer checked. CI debug key differs from the installed phone build; replacement consequences documented, no owner installation/session reset performed.
 - Updated memory/status/decisions/spike and active plan. Full Samsung focused handoff/current-Reel save, account session, quality, OEM lifecycle and battery remain open. Temporary standalone diagnostic package cleanup waits until the phone is available. Plan 0001 remains active.
+
+## 2026-09-28 — Arabic and persistent personal signing started
+
+- Owner confirmed normal 0.4 use with no observed problems, then requested Arabic and future updates without uninstalling.
+- Moved hard-coded app chrome into Android resources; added 112 Arabic strings, all plural forms, RTL and an Android 13+ app-language settings entry. Kept selectors, resolver/storage and branding/folder identity unchanged.
+- Created and locally backed up one RSA-3072/40-year PKCS12 identity with restricted filesystem access; uploaded only sealed encrypted secrets through GitHub's repository secrets API. Public fingerprint is checked in; private material is ignored and excluded from artifacts. Local debug key does not match delivered 0.4, whose ephemeral private key was not retained.
+- Added explicit non-debuggable signed builds and a disposable-emulator update/data-retention gate. Build, Arabic visual checks and signed update validation are pending; no phone installation or deletion performed.
+
+## 2026-09-28 — Version 0.5 Arabic and signed update milestone verified
+
+- Source `902ceae1fe65822958191c3732a88a368c3864bc` passed build/strict lint, 19 JVM + 46 instrumentation tests per API 29/35/36 with zero failures/errors/skips (CI `36443683479`). Reviewed actual Arabic RTL Home/setup/Settings and preserved the owner-accepted 0.4 save path.
+- Signed CI `36443689015` verified the permanent certificate and non-debuggable release, then passed both phases of version 4 → 5 replacement with settings and exact app-owned media retained. No owner device installation/removal/reset occurred.
+- Delivered 0.5.0/code 5 APK: 23,211,148 bytes, SHA-256 `e901ddc1c3de5d0db174c2acaa7b3b4ec3793018ca02770fc6897d98b73c2225`. Checked archive/CRC and public signer match, plus protected backup load. Private key/password are absent from Git and artifacts; two encrypted repository secrets support future signed builds. Old debug-key transition still requires one replacement, clearly documented.
+- Updated status/memory/decisions/build/signing/spike and active plan with acceptance and proof boundaries. Plan 0001 remains active for the separate account-session/OEM/battery gates; no new plan.
