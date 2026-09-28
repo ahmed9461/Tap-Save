@@ -66,10 +66,14 @@ class OverlayIntegrationTest {
                 for ((state, glyph) in listOf("idle" to "↓", "busy" to "…", "progress" to "63%", "success" to "✓", "error" to "!")) {
                     scenario.onActivity { window.render(glyph, "Save current Reel") }
                     instrumentation.waitForIdleSync()
-                    val view = WindowInspector.getGlobalWindowViews().filterIsInstance<FloatingSaveView>().single()
+                    lateinit var capture: com.google.common.util.concurrent.ListenableFuture<android.graphics.Bitmap>
+                    scenario.onActivity {
+                        val view = WindowInspector.getGlobalWindowViews().filterIsInstance<FloatingSaveView>().single()
+                        capture = view.captureToBitmapAsync()
+                    }
                     // PixelCopy waits for this actual native window's new frame, instead
                     // of capturing a preceding display frame or the system clipboard preview.
-                    captureUi("overlay-$state", view.captureToBitmapAsync().get(5, TimeUnit.SECONDS))
+                    captureUi("overlay-$state", capture.get(5, TimeUnit.SECONDS))
                 }
             } finally {
                 scenario.onActivity {
