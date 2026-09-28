@@ -1,9 +1,11 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val appVersion = java.util.Properties().apply { file("version.properties").inputStream().use { load(it) } }
+val appVersion = Properties().apply { file("version.properties").inputStream().use { load(it) } }
 
 android {
     namespace = "io.github.ahmed9461.tapsave"
