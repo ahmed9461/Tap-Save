@@ -3,6 +3,12 @@
 **Status:** Active  
 **Started:** 2026-09-26
 
+### Owner acceptance and 0.5 continuation
+
+- Owner reports the delivered 0.4 works very well with no observed problems. This establishes normal-use acceptance; targeted session, OEM interruption and battery measurements remain separate.
+- Requested continuation: Arabic UI/notifications/errors and a persistent signing identity for future in-place updates. Implement native resources/RTL and platform language settings, preserve the accepted acquisition/download path, and retain one protected signing key. No new plan.
+- Before delivery: pass build/unit/lint/device gates, inspect real Arabic screens, verify non-debuggable signing fingerprint and same-key higher-version update with retained settings/media. Document the one-time 0.4 key transition and preserve the owner's installation until they choose to replace it.
+
 ## Objective
 
 Prove the risky parts of Tap Save before investing in polished UI. The result of this plan should be a minimal Android development build that demonstrates the reliable save path and provides evidence for the architecture decision.

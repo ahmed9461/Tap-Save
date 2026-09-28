@@ -44,7 +44,7 @@ class OverlayService : Service() {
         if (!preferences.enabled) stopSelf()
         else window.refreshAppearance(key == "position-reset")
     }
-    private val resetStatus = Runnable { if (!acquiring && SaveUiState.current?.active != true) window.render("↓", "Save current Reel") }
+    private val resetStatus = Runnable { if (!acquiring && SaveUiState.current?.active != true) window.render("↓", getString(R.string.save_current_reel)) }
     private val saveObserver: (SaveState?) -> Unit = { state ->
         main.removeCallbacks(resetStatus)
         if (state != null) {
@@ -56,7 +56,7 @@ class OverlayService : Service() {
                 SavePhase.FAILED -> "!"
                 SavePhase.CANCELLED -> "↓"
             }
-            window.render(glyph, saveMessage(this, state) + if (state.active) ". Tap to cancel" else ". Tap to save current Reel")
+            window.render(glyph, getString(if (state.active) R.string.tap_cancel else R.string.tap_save, saveMessage(this, state)))
             if (!state.active) main.postDelayed(resetStatus, 3_000)
         }
     }
@@ -141,7 +141,7 @@ class OverlayService : Service() {
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.overlay_notification))
-            .setContentText("Ready while you browse Instagram")
+            .setContentText(getString(R.string.overlay_ready))
             .setContentIntent(open)
             .setOngoing(true)
             .addAction(Notification.Action.Builder(null, getString(R.string.stop_overlay), stop).build())

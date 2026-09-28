@@ -22,4 +22,6 @@ Equivalent manual test on a disposable emulator:
   -Pandroid.testInstrumentationRunnerArguments.liveReel=https://www.instagram.com/reel/<shortcode>/
 ```
 
-CI debug signing keys are ephemeral. An APK from a different job may not install over an earlier debug build; there is no stable release signing identity yet.
+CI debug signing keys are ephemeral and reserved for disposable tests. Personal deliveries use the persistent release identity and update gate in [SIGNING.md](SIGNING.md). Change only `app/version.properties` for the next release version; never generate a fresh signing key for a routine update.
+
+Arabic and English are Android resources; Arabic device locales use RTL automatically on all supported APIs. Android 13+ also exposes the app-specific language selector through Settings. The selector lists only the two supported languages. No locale library or custom font is bundled. The localization tests cover Arabic resources/plurals and actual Arabic screens via the platform locale API.

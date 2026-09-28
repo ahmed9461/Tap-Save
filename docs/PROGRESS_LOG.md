@@ -1,5 +1,12 @@
 # PROGRESS_LOG
 
+## 2026-09-28 — Arabic and persistent personal signing started
+
+- Owner confirmed normal 0.4 use with no observed problems, then requested Arabic and future updates without uninstalling.
+- Moved hard-coded app chrome into Android resources; added 112 Arabic strings, all plural forms, RTL and an Android 13+ app-language settings entry. Kept selectors, resolver/storage and branding/folder identity unchanged.
+- Created and locally backed up one RSA-3072/40-year PKCS12 identity with restricted filesystem access; uploaded only sealed encrypted secrets through GitHub's repository secrets API. Public fingerprint is checked in; private material is ignored and excluded from artifacts. Local debug key does not match delivered 0.4, whose ephemeral private key was not retained.
+- Added explicit non-debuggable signed builds and a disposable-emulator update/data-retention gate. Build, Arabic visual checks and signed update validation are pending; no phone installation or deletion performed.
+
 ## 2026-09-27 — Real public Reel saved through the Android Share pipeline
 
 - Code `03a5d1f`: build/strict lint, 16 JVM + 26 instrumentation tests per API 29/35/36 job passed (CI `36277332969`). Separate live CI `36277332176` saved `DGOSAUyC903` through the real API 36 Share activity/service, verified published video/audio and decoded a frame. No resolver/transport fixture override in that live test.

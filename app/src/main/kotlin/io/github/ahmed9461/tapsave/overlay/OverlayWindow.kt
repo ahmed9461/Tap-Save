@@ -1,5 +1,6 @@
 package io.github.ahmed9461.tapsave.overlay
 
+import io.github.ahmed9461.tapsave.R
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PixelFormat
@@ -27,7 +28,7 @@ class OverlayWindow(baseContext: Context, private val onFailure: () -> Unit, pri
     private var size = (appearance.sizeDp * context.resources.displayMetrics.density).roundToInt()
     private var button: FloatingSaveView? = null
     private var glyph = "↓"
-    private var description = "Save current Reel"
+    private var description = context.getString(R.string.save_current_reel)
     fun render(text: String, label: String) {
         glyph = text; description = label
         val state = when {

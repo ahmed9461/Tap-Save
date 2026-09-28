@@ -51,7 +51,7 @@ class ShareActivity : ComponentActivity() {
                         val status = SaveUiState.current
                         if (status != null && (status.target.key == input.key || status.requestedUrl == input.canonicalUrl)) {
                             Text(saveMessage(this@ShareActivity, status))
-                            if (status.phase == SavePhase.SAVED && status.diagnostic?.startsWith("session-") == true) Text("Instagram connection used")
+                            if (status.phase == SavePhase.SAVED && status.diagnostic?.startsWith("session-") == true) Text(stringResource(R.string.session_used))
                             if (status.active) {
                                 val total = status.total
                                 if (total != null) LinearProgressIndicator(progress = { (status.bytes.toFloat() / total).coerceIn(0f, 1f) })

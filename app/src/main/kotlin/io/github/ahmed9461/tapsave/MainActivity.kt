@@ -1,5 +1,6 @@
 package io.github.ahmed9461.tapsave
 
+import io.github.ahmed9461.tapsave.R
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
@@ -38,6 +39,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             TapSaveApp(permissions, sessionEnabled, clearing, message,
                 onPermission = ::openPermission,
+                onLanguage = if (android.os.Build.VERSION.SDK_INT >= 33) ({
+                    try { startActivity(Intent(Settings.ACTION_APP_LOCALE_SETTINGS, "package:$packageName".toUri())) }
+                    catch (_: ActivityNotFoundException) { message = getString(R.string.settings_unavailable) }
+                }) else null,
                 onActive = { active ->
                     message = null
                     if (active) {
@@ -57,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 },
                 onOpenVideo = { uri ->
                     try { startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "video/mp4").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
-                    catch (_: ActivityNotFoundException) { message = "Open Movies/Tap Save in your gallery." }
+                    catch (_: ActivityNotFoundException) { message = getString(R.string.open_gallery) }
                 },
             )
         }

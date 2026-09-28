@@ -1,5 +1,6 @@
 package io.github.ahmed9461.tapsave.platform.instagram
 
+import io.github.ahmed9461.tapsave.R
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
@@ -23,7 +24,7 @@ class AcquisitionDiagnostics(private val context: Context) {
     }
     fun flush() { context.getSharedPreferences("acquisition-diagnostics", Context.MODE_PRIVATE).edit { putString("last", lines.joinToString("\n").takeLast(32_000)) } }
     companion object {
-        fun read(context: Context): String = context.getSharedPreferences("acquisition-diagnostics", Context.MODE_PRIVATE).getString("last", null) ?: "No acquisition yet. Open Instagram and tap the floating button."
+        fun read(context: Context): String = context.getSharedPreferences("acquisition-diagnostics", Context.MODE_PRIVATE).getString("last", null) ?: context.getString(R.string.no_acquisition)
         fun clear(context: Context) { context.getSharedPreferences("acquisition-diagnostics", Context.MODE_PRIVATE).edit { clear() } }
     }
 }

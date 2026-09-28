@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -27,11 +29,11 @@ import io.github.ahmed9461.tapsave.download.*
 import io.github.ahmed9461.tapsave.overlay.*
 import io.github.ahmed9461.tapsave.platform.instagram.AcquisitionDiagnostics
 
-enum class SetupPermission(val title: String, val explanation: String) {
-    FLOATING("Floating button", "Allow Tap Save to display a small save button over Instagram."),
-    CONTEXT("Instagram visibility", "Allow Usage Access so the button appears while you browse Instagram and hides when you leave."),
-    NOTIFICATIONS("Save notifications", "Keep progress, cancellation and the off switch available in your notifications."),
-    REEL_LINK("One-tap saving", "Enable Tap Save • Instagram only in Accessibility settings. After you tap, it selects Instagram’s Share and Copy link controls to find the current Reel."),
+enum class SetupPermission(val title: Int, val explanation: Int) {
+    FLOATING(R.string.floating_button, R.string.setup_floating),
+    CONTEXT(R.string.instagram_visibility, R.string.setup_context),
+    NOTIFICATIONS(R.string.save_notifications, R.string.setup_notifications),
+    REEL_LINK(R.string.one_tap_saving, R.string.setup_reel_link),
 }
 
 val TapMint = Color(0xFF35E6A7)
@@ -46,6 +48,7 @@ fun TapSaveApp(
     permissions: Set<SetupPermission>, sessionEnabled: Boolean, clearing: Boolean, message: String?,
     onPermission: (SetupPermission) -> Unit, onActive: (Boolean) -> Unit,
     onConnect: () -> Unit, onDisconnect: () -> Unit, onOpenVideo: (Uri) -> Unit,
+    onLanguage: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val preferences = remember { OverlayPreferences(context) }
@@ -57,7 +60,7 @@ fun TapSaveApp(
     var advanced by rememberSaveable { mutableStateOf(false) }
     fun diagnostics(): String {
         val state = SaveUiState.current ?: SaveJournal(context).read()
-        return AcquisitionDiagnostics.read(context) + "\n\nLatest download: " + listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · ")
+        return AcquisitionDiagnostics.read(context) + "\n\n" + context.getString(R.string.latest_download_diagnostic, listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · "))
     }
     var report by remember { mutableStateOf(diagnostics()) }
     val missing = SetupPermission.entries.filterNot { it in permissions }
@@ -69,12 +72,12 @@ fun TapSaveApp(
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.safeDrawingPadding().padding(horizontal = 24.dp)) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (page != "home") IconButton(onClick = { home() }) { Icon(painterResource(R.drawable.ic_back), "Back") }
+                    if (page != "home") IconButton(onClick = { home() }) { Icon(painterResource(R.drawable.ic_back), stringResource(R.string.back)) }
                     Column(Modifier.weight(1f)) {
-                        Text(if (page == "settings") "Settings" else "Tap Save", style = MaterialTheme.typography.headlineMedium)
-                        if (page == "home") Text("Tap. Save. Done.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (page == "settings") stringResource(R.string.settings) else stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+                        if (page == "home") Text(stringResource(R.string.tagline), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (page == "home") IconButton(onClick = { page = "settings" }) { Icon(painterResource(R.drawable.ic_settings), "Settings") }
+                    if (page == "home") IconButton(onClick = { page = "settings" }) { Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings)) }
                 }
                 Column(Modifier.weight(1f).verticalScroll(pageScroll), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     when (page) {
@@ -83,8 +86,8 @@ fun TapSaveApp(
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     SaveMark()
                                     Column(Modifier.weight(1f)) {
-                                        Text(if (OverlayService.running) "Tap Save active" else "Tap Save inactive", style = MaterialTheme.typography.titleLarge)
-                                        Text(if (OverlayService.running) "Ready in Instagram" else "Ready when you are", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(if (OverlayService.running) stringResource(R.string.active) else stringResource(R.string.inactive), style = MaterialTheme.typography.titleLarge)
+                                        Text(if (OverlayService.running) stringResource(R.string.ready_instagram) else stringResource(R.string.ready_when_you_are), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Switch(checked = OverlayService.running, onCheckedChange = {
                                         if (it && missing.isNotEmpty()) page = "setup"
@@ -93,90 +96,95 @@ fun TapSaveApp(
                                 }
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text(if (missing.isEmpty()) "Setup complete" else "${missing.size} setup steps remaining", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (missing.isNotEmpty()) TextButton(onClick = { page = "setup" }) { Text("Continue setup") }
+                                Text(if (missing.isEmpty()) stringResource(R.string.setup_complete) else pluralStringResource(R.plurals.setup_remaining, missing.size, missing.size), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (missing.isNotEmpty()) TextButton(onClick = { page = "setup" }) { Text(stringResource(R.string.continue_setup)) }
                             }
                             if (OverlayService.lastAcquisitionError != null) Panel {
-                                Text("Couldn’t read this Reel", style = MaterialTheme.typography.titleMedium)
-                                Text("Try the floating button again, or use Instagram Share → Tap Save.")
+                                Text(stringResource(R.string.acquisition_failed), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.acquisition_retry))
                             }
                             if (saved != null) Panel {
-                                Text("Latest save", style = MaterialTheme.typography.labelLarge, color = TapMint)
+                                Text(stringResource(R.string.latest_save), style = MaterialTheme.typography.labelLarge, color = TapMint)
                                 Text(saveMessage(context, saved), style = MaterialTheme.typography.titleMedium)
                                 if (saved.active) {
                                     if (saved.total != null && saved.total > 0) LinearProgressIndicator(progress = { (saved.bytes.toFloat() / saved.total).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                                     else LinearProgressIndicator(Modifier.fillMaxWidth())
                                 }
-                                if (saved.phase == SavePhase.SAVED && saved.uri != null) TextButton(onClick = { onOpenVideo(saved.uri) }) { Text("Open video") }
-                                if (saved.failure == SaveFailure.Reason.AUTH_REQUIRED && !sessionEnabled) TextButton(onClick = onConnect) { Text("Connect Instagram") }
+                                if (saved.phase == SavePhase.SAVED && saved.uri != null) TextButton(onClick = { onOpenVideo(saved.uri) }) { Text(stringResource(R.string.open_video)) }
+                                if (saved.failure == SaveFailure.Reason.AUTH_REQUIRED && !sessionEnabled) TextButton(onClick = onConnect) { Text(stringResource(R.string.connect_instagram)) }
                             }
                             if (saved == null && OverlayService.lastAcquisitionError == null) {
-                                Text("Keep browsing. Tap the floating button when a Reel is worth saving.", style = MaterialTheme.typography.bodyLarge)
-                                Text("Share → Tap Save is always available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.home_hint), style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.share_always), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         "setup" -> {
                             SaveMark()
-                            Text(if (missing.isEmpty()) "You’re ready" else "Make saving one tap", style = MaterialTheme.typography.headlineSmall)
-                            Text("A few Android permissions keep Tap Save available while you browse.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (missing.isEmpty()) stringResource(R.string.you_are_ready) else stringResource(R.string.make_one_tap), style = MaterialTheme.typography.headlineSmall)
+                            Text(stringResource(R.string.setup_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             LinearProgressIndicator(progress = { permissions.size / SetupPermission.entries.size.toFloat() }, modifier = Modifier.fillMaxWidth())
                             val next = missing.firstOrNull()
                             Panel {
-                                Text(if (next == null) "Setup complete" else "Step ${SetupPermission.entries.size - missing.size + 1} of ${SetupPermission.entries.size}", color = TapMint, style = MaterialTheme.typography.labelLarge)
-                                Text(next?.title ?: "Open Instagram and tap ↓", style = MaterialTheme.typography.titleLarge)
-                                Text(next?.explanation ?: "Your save button is ready. You can change its size and opacity in Settings.")
-                                Button(onClick = { if (next != null) onPermission(next) else { floating = true; onActive(true); home() } }, modifier = Modifier.fillMaxWidth()) { Text(if (next != null) "Open Android settings" else "Activate Tap Save") }
+                                Text(if (next == null) stringResource(R.string.setup_complete) else stringResource(R.string.setup_step, SetupPermission.entries.size - missing.size + 1, SetupPermission.entries.size), color = TapMint, style = MaterialTheme.typography.labelLarge)
+                                Text(next?.let { stringResource(it.title) } ?: stringResource(R.string.open_instagram), style = MaterialTheme.typography.titleLarge)
+                                Text(next?.let { stringResource(it.explanation) } ?: stringResource(R.string.setup_ready))
+                                Button(onClick = { if (next != null) onPermission(next) else { floating = true; onActive(true); home() } }, modifier = Modifier.fillMaxWidth()) { Text(if (next != null) stringResource(R.string.open_android_settings) else stringResource(R.string.activate)) }
                             }
                         }
                         "settings" -> {
                             Panel {
-                                Label("Floating button")
+                                Label(stringResource(R.string.language))
+                                Text(stringResource(R.string.language_description))
+                                if (onLanguage != null) TextButton(onClick = onLanguage) { Text(stringResource(R.string.choose_language)) }
+                            }
+                            Panel {
+                                Label(stringResource(R.string.floating_button))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Show floating button", Modifier.weight(1f))
+                                    Text(stringResource(R.string.show_floating_button), Modifier.weight(1f))
                                     Switch(floating, { floating = it; preferences.enabled = it; if (!it) onActive(false) }, modifier = Modifier.testTag("floating-toggle"))
                                 }
-                                Text("Size · $size dp")
+                                Text(stringResource(R.string.size_value, size))
                                 Slider(size.toFloat(), { size = it.toInt() }, onValueChangeFinished = { preferences.sizeDp = size }, valueRange = 48f..72f, steps = 2, modifier = Modifier.testTag("button-size"))
-                                Text("Opacity · ${(opacity * 100).toInt()}%")
+                                Text(stringResource(R.string.opacity_value, (opacity * 100).toInt()))
                                 Slider(opacity, { opacity = it }, onValueChangeFinished = { preferences.opacity = opacity }, valueRange = .4f..1f, modifier = Modifier.testTag("button-opacity"))
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     SaveMark(size, opacity)
-                                    TextButton(onClick = { preferences.resetPosition() }) { Text("Reset position") }
+                                    TextButton(onClick = { preferences.resetPosition() }) { Text(stringResource(R.string.reset_position)) }
                                 }
                             }
                             Panel {
-                                Label("Downloads")
-                                Text("Best available video quality", style = MaterialTheme.typography.titleMedium)
-                                Text("Highest available combined video and audio. Original file, no recompression.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Label(stringResource(R.string.downloads))
+                                Text(stringResource(R.string.best_quality), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.quality_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 HorizontalDivider()
-                                Text("Save location", style = MaterialTheme.typography.titleMedium)
-                                Text("Movies / Tap Save", color = TapMint)
-                                Text("Videos appear in your gallery. No storage permission is needed.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.save_location), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.save_folder), color = TapMint)
+                                Text(stringResource(R.string.gallery_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Panel {
-                                Label("Instagram")
-                                Text(if (sessionEnabled) "Connected" else "Not connected", style = MaterialTheme.typography.titleMedium)
-                                Text("Optional. Tap Save tries public videos first; connect if Instagram requires sign-in.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (!sessionEnabled) OutlinedButton(onClick = onConnect) { Text("Connect Instagram") }
-                                TextButton(onClick = onDisconnect, enabled = !clearing) { Text(if (clearing) "Clearing…" else "Disconnect and clear session") }
+                                Label(stringResource(R.string.instagram_name))
+                                Text(if (sessionEnabled) stringResource(R.string.connected) else stringResource(R.string.not_connected), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.session_optional), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (!sessionEnabled) OutlinedButton(onClick = onConnect) { Text(stringResource(R.string.connect_instagram)) }
+                                TextButton(onClick = onDisconnect, enabled = !clearing) { Text(if (clearing) stringResource(R.string.clearing) else stringResource(R.string.disconnect)) }
                             }
                             Panel {
-                                Label("Required permissions")
+                                Label(stringResource(R.string.required_permissions))
                                 SetupPermission.entries.forEach { permission ->
                                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Column(Modifier.weight(1f)) { Text(permission.title); Text(if (permission in permissions) "Allowed" else "Not allowed", color = if (permission in permissions) TapMint else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
-                                        TextButton(onClick = { onPermission(permission) }) { Text("Manage") }
+                                        Column(Modifier.weight(1f)) { Text(stringResource(permission.title)); Text(if (permission in permissions) stringResource(R.string.allowed) else stringResource(R.string.not_allowed), color = if (permission in permissions) TapMint else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                                        TextButton(onClick = { onPermission(permission) }) { Text(stringResource(R.string.manage)) }
                                     }
                                 }
                             }
-                            TextButton(onClick = { advanced = !advanced; report = diagnostics() }) { Text(if (advanced) "Hide Advanced" else "Advanced") }
+                            TextButton(onClick = { advanced = !advanced; report = diagnostics() }) { Text(if (advanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced)) }
                             if (advanced) Panel {
-                                Label("Acquisition diagnostics")
-                                Text("Last tap only. Control IDs, supported actions, timing and clipboard freshness. Screen text and link contents are excluded.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Label(stringResource(R.string.diagnostics))
+                                Text(stringResource(R.string.diagnostics_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 SelectionContainer { Text(report, style = MaterialTheme.typography.bodySmall) }
                                 Row {
-                                    TextButton(onClick = { context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Tap Save diagnostics", report)) }) { Text("Copy report") }
-                                    TextButton(onClick = { AcquisitionDiagnostics.clear(context); report = AcquisitionDiagnostics.read(context) }) { Text("Clear") }
+                                    TextButton(onClick = { context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(context.getString(R.string.diagnostics), report)) }) { Text(stringResource(R.string.copy_report)) }
+                                    TextButton(onClick = { AcquisitionDiagnostics.clear(context); report = AcquisitionDiagnostics.read(context) }) { Text(stringResource(R.string.clear)) }
                                 }
                             }
                         }
@@ -184,7 +192,7 @@ fun TapSaveApp(
                     message?.let { Text(it, color = TapMint) }
                     Spacer(Modifier.height(12.dp))
                 }
-                if (page == "setup") TextButton(onClick = { home() }, modifier = Modifier.fillMaxWidth()) { Text("Use Share for now") }
+                if (page == "setup") TextButton(onClick = { home() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.use_share)) }
             }
         }
     }

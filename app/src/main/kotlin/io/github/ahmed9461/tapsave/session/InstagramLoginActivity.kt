@@ -1,5 +1,6 @@
 package io.github.ahmed9461.tapsave.session
 
+import io.github.ahmed9461.tapsave.R
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
@@ -9,7 +10,6 @@ import android.widget.*
 import java.net.URI
 import java.io.ByteArrayInputStream
 
-@SuppressLint("SetTextI18n") // Temporary native sign-in chrome; page content is Instagram-owned.
 class InstagramLoginActivity : Activity() {
     private lateinit var web: WebView
     @SuppressLint("SetJavaScriptEnabled") // Instagram's real sign-in page requires JS; no JS bridge or field scraping.
@@ -18,20 +18,20 @@ class InstagramLoginActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val status = TextView(this).apply { text = "Instagram • https://www.instagram.com\nSign in on Instagram, then choose Use session. Tap Save does not read or store your password."; setPadding(16, 16, 16, 16) }
+        val status = TextView(this).apply { text = getString(R.string.login_instructions); setPadding(16, 16, 16, 16) }
         layout.addView(status)
         layout.addView(Button(this).apply {
-            text = "Use session"
+            text = getString(R.string.use_session)
             setOnClickListener {
                 val cookie = CookieManager.getInstance().getCookie(InstagramSession.ORIGIN).orEmpty()
                 if (cookie.split(';').any { it.trim().startsWith("sessionid=") }) {
                     CookieManager.getInstance().flush()
                     setResult(RESULT_OK); finish()
-                } else status.text = "Sign-in is not complete. Finish Instagram login, then choose Use session."
+                } else status.text = getString(R.string.login_incomplete)
             }
         })
-        layout.addView(Button(this).apply { text = "Close"; setOnClickListener { finish() } })
-        web = try { WebView(this) } catch (_: RuntimeException) { status.text = "Android System WebView is unavailable."; setContentView(layout); return }
+        layout.addView(Button(this).apply { text = getString(R.string.close); setOnClickListener { finish() } })
+        web = try { WebView(this) } catch (_: RuntimeException) { status.text = getString(R.string.webview_unavailable); setContentView(layout); return }
         web.apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true

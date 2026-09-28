@@ -1,5 +1,12 @@
 # DECISIONS
 
+## D-018 — Native Arabic localization and persistent personal signing
+
+**Status:** Implemented; 0.5 automated/visual/update gates pending.
+**Decision:** Use complete English defaults plus Arabic Android string/plural resources and existing RTL-aware Compose/native layouts. Follow device locale on API 29+, with Android's per-app language settings on API 33+. Keep brand/folder names and diagnostic protocol codes stable. No extra locale/UI dependency. See [Android localization](https://developer.android.com/guide/topics/resources/localization) and [per-app languages](https://developer.android.com/guide/topics/resources/app-languages).
+
+**Signing:** Retain one RSA-3072/40-year PKCS12 identity locally and in encrypted repository Actions secrets. Check only the public certificate/fingerprint into Git; verify every delivered release against it. Use a non-debuggable release, increasing version codes, explicit signing configuration and an emulator replacement-install/data-retention gate. Manual signing never runs with PR secrets or generates keys. The 0.4 ephemeral private key is unavailable; the local debug key has a different fingerprint, so a one-time replacement is unavoidable before stable-key updates. Owner device removal/reset is not automated. Operational details and primary sources are in `SIGNING.md`.
+
 Durable project decisions are recorded here. Change an existing decision only when evidence justifies it; append a replacement decision rather than silently rewriting history.
 
 ## D-001 — Android-first, Android-only initial product

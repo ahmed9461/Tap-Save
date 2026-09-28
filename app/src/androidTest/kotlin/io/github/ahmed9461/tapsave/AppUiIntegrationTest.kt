@@ -47,8 +47,8 @@ class AppUiIntegrationTest {
         ActivityScenario.launch(MainActivity::class.java).use {
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithText("Acquisition diagnostics").assertDoesNotExist()
-            compose.onNodeWithTag("button-size").performSemanticsAction(SemanticsActions.SetProgress) { it(64f) }
-            compose.onNodeWithTag("button-opacity").performSemanticsAction(SemanticsActions.SetProgress) { it(.6f) }
+            compose.onNodeWithTag("button-size").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(64f) }
+            compose.onNodeWithTag("button-opacity").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(.6f) }
             compose.waitForIdle()
             assertEquals(64, OverlayPreferences(context).sizeDp)
             assertEquals(.6f, OverlayPreferences(context).opacity, .01f)

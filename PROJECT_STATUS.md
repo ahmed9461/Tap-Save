@@ -4,7 +4,7 @@
 
 **Phase:** Foundation / technical validation
 
-**Status:** Version 0.4 control repair and actual Home/Settings/setup/overlay UI implemented, built and tested. The real Samsung Copy action failure was reproduced and its supported parent action verified. Complete new-app acquisition through focused clipboard and saving still requires phone acceptance.
+**Status:** Owner reports 0.4 works very well with no problems observed. Arabic localization and persistent personal-release signing are implemented for 0.5; build, Arabic visual and same-key update verification are pending. Detailed account-session/OEM/battery stress gates are not implied by the general acceptance report.
 
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 
