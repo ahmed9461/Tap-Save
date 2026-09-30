@@ -1,0 +1,85 @@
+name: Personal signed release
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TAP_SAVE_KEYSTORE_PASSWORD: ${{ secrets.TAP_SAVE_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@4c125117fe7c5aed11272ec4213f602f012f89f2
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '16111833'
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+      - name: Load existing signing identity
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TAP_SAVE_KEYSTORE_BASE64 }}
+        run: |
+          python3 - <<'PY'
+          import os,base64
+          from pathlib import Path
+          if not os.environ['KEYSTORE_BASE64'] or not os.environ['TAP_SAVE_KEYSTORE_PASSWORD']:
+              raise SystemExit('Existing signing secrets are required; never generate a replacement in CI')
+          path=Path(os.environ['RUNNER_TEMP'])/'tap-save-release.p12'
+          path.write_bytes(base64.b64decode(os.environ['KEYSTORE_BASE64'],validate=True))
+          path.chmod(0o600)
+          with open(os.environ['GITHUB_ENV'],'a') as env:
+              env.write(f'TAP_SAVE_KEYSTORE_PATH={path}\n')
+          PY
+      - name: Build signed update baseline
+        run: |
+          ./gradlew --no-daemon :app:assembleRelease -PtapSaveVersionCode="$(python3 scripts/release_version.py --previous)"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/tap-save-baseline.apk"
+      - name: Build and verify signed release
+        run: |
+          ./gradlew --no-daemon :app:assembleRelease :app:assembleDebugAndroidTest :app:lintRelease
+          python3 scripts/verify_release.py app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$TAP_SAVE_KEYSTORE_PATH" --ks-key-alias tap-save --ks-pass env:TAP_SAVE_KEYSTORE_PASSWORD --key-pass env:TAP_SAVE_KEYSTORE_PASSWORD --out "$RUNNER_TEMP/signed-tests.apk" app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: python3 scripts/verify_release_upgrade.py
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/tap-save-release.p12" "$RUNNER_TEMP/signed-tests.apk" "$RUNNER_TEMP/tap-save-baseline.apk"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: success()
+        with:
+          name: Tap-Save-signed-release
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/reports/release-verification.json
+            app/build/reports/upgrade-verification.json
+            app/build/reports/upgrade-*.txt
+          retention-days: 30
+      - name: Show failure diagnostics
+        if: failure()
+        run: |
+          cat app/build/reports/lint-results-release.txt 2>/dev/null || true
+          cat app/build/reports/upgrade-*.txt 2>/dev/null || true

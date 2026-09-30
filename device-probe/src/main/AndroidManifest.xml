@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="Tap Save control diagnostic" android:allowBackup="false">
+        <activity android:name=".ClipboardProbeActivity" android:exported="true" android:excludeFromRecents="true" />
+    </application>
+    <instrumentation android:name=".Inspector" android:targetPackage="io.github.ahmed9461.tapsave.probe" android:label="Instagram control inspection" />
+</manifest>

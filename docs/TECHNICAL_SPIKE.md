@@ -1,0 +1,216 @@
+# Foundation spike evidence
+
+Plan: `plans/0001-foundation-and-instagram-spike.md`. Observations dated 2026-09-26/27.
+This is an evidence notebook, not a replacement plan. Device acceptance remains open.
+
+## Compare before committing
+
+| Concern | Smallest useful experiment | Alternatives and tradeoffs | Current boundary |
+| --- | --- | --- | --- |
+| Floating control | `WindowManager.TYPE_APPLICATION_OVERLAY`, one native View, explicit user-started session | Compose is useful for the activity but adds lifecycle owners to a service-hosted window. Bubbles are conversation-oriented; PiP needs an activity and is not a general overlay. | Native View candidate; permission denial must leave Share usable. |
+| Foreground context | `UsageStatsManager.queryEvents` with user-granted usage access, only during an enabled overlay session | No general cross-app foreground callback for ordinary apps. Usage events require polling and can be delayed; accessibility events expose substantially more sensitive content. | Optional usage-access experiment; unknown/locked context hides control. No browsing history persistence. |
+| Share fallback | Exported `ACTION_SEND` / `text/plain` activity; validate `EXTRA_TEXT` locally | Clipboard needs focus on modern Android and is neither a reliable live target nor a background channel. Deep links receive explicit URLs but cannot reveal another app's current screen. | Establish explicit shared targets first; never reuse the last share as the current Reel. |
+| Current Reel | Compare explicit share URL against package-only usage events | Overlay permission provides a window, not another app's URL. MediaSession metadata is app-dependent. Screen capture/OCR adds consent, latency and privacy exposure without guaranteeing a permalink. Accessibility may inspect visible content, but UI/IDs change. | Direct one-tap identity is unproven. No accessibility service, screen capture, private APIs or authentication workarounds. |
+| Download lifecycle | One immediate user-requested public file transfer in a short `dataSync` FGS | DownloadManager owns retries/notifications but still needs a resolver and separate MediaStore validation/publication. UIDT adds a second path below API 34. WorkManager adds scheduling for an immediate, bounded request. | Native single transfer selected for the spike (D-014); no scheduler/engine dependency. |
+| Overlay lifetime | Explicit session, ongoing Stop notification, `START_NOT_STICKY`; evaluate `specialUse` FGS | A bound/activity-only service does not survive leaving Tap Save; `dataSync` is not an honest type for an idle overlay. No boot start or blanket battery exemption. | Session-only FGS is an experiment, not a claim of OEM reliability. |
+| Storage | `MediaStore.Video`, `RELATIVE_PATH=Movies/Tap Save/`, `IS_PENDING=1` until verified completion | SAF adds a picker; legacy filesystem permissions add complexity; app-private storage is not a gallery result. | API 29 minimum avoids legacy storage branches. Delete pending rows on cancel/failure; reconcile interrupted rows before claiming durable storage. |
+| Resolver | Isolated Instagram adapter, bounded anonymous HTTPS against public Reel pages/embeds | A small public-metadata parser has little APK cost but can fail at login/challenge or absent media URLs. Embedded yt-dlp adds a Python/native runtime, extractor updates and possibly FFmpeg/muxing. WebView adds a renderer and cookie lifecycle. | Native parser selected from the public embed experiment below. Never retry restrictions using credentials or private endpoints. |
+
+Native API documentation establishes capabilities/constraints, not Instagram/OEM acceptance. A real device with Instagram is required for the overlay and actual share flow. Emulator fixtures cannot prove those gates.
+
+## Primary references
+
+- [Overlay window type](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_APPLICATION_OVERLAY)
+- [Non-activity window context](https://developer.android.com/reference/android/content/Context#createWindowContext(int,android.os.Bundle))
+- [UsageStatsManager](https://developer.android.com/reference/android/app/usage/UsageStatsManager)
+- [Receiving shares](https://developer.android.com/develop/ui/compose/sharing/receive)
+- [Clipboard restrictions](https://developer.android.com/about/versions/10/privacy/changes#clipboard-data)
+- [Foreground service types](https://developer.android.com/develop/background-work/services/fgs/service-types)
+- [Foreground starts and visible-overlay exemption](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)
+- [Transfer task comparison](https://developer.android.com/develop/background-work/background-tasks/data-transfer-options)
+- [User-initiated data transfer jobs](https://developer.android.com/develop/background-work/background-tasks/uidt)
+- [MediaStore ownership and pending writes](https://developer.android.com/training/data-storage/shared/media)
+- [Explicit inclusion of pending media in queries](https://developer.android.com/reference/android/provider/MediaStore#QUERY_ARG_MATCH_PENDING)
+
+## Toolchain selection
+
+Verified against primary release documentation and live publisher metadata, rather than inferred version numbers:
+
+- AGP **9.4.1**: stable artifact in Google Maven; [9.4 compatibility](https://developer.android.com/build/releases/agp-9-4-0-release-notes).
+- Gradle **9.6.0**: AGP 9.4's documented default/minimum, within Kotlin's supported Gradle range. The live Gradle endpoint reports 9.8.0; avoid that newer, not fully supported Kotlin combination for this spike.
+- Kotlin/Compose compiler **2.4.20**: [Kotlin release history](https://kotlinlang.org/docs/releases.html), [compatibility matrix](https://kotlinlang.org/docs/gradle-configure-project.html). Use AGP built-in Kotlin, not the legacy Android Kotlin plugin.
+- Compose BOM **2026.09.00**, Activity Compose **1.13.0**: [BOM](https://developer.android.com/develop/ui/compose/bom), [Activity releases](https://developer.android.com/jetpack/androidx/releases/activity), Google Maven stable metadata.
+- SDK compile/target **37** (Android 17); build tools **36.0.0** per AGP default; minimum **29** (Android 10) for scoped MediaStore.
+- Build JVM: maintained Temurin **21 LTS**; app bytecode target **17**. The checked-in wrapper JAR and Gradle distribution checksum were verified against Gradle's publisher records; CI installs the JDK through the pinned setup action.
+
+Application ID and namespace: `io.github.ahmed9461.tapsave`, based on the repository owner rather than an unowned domain. One `app` module; no DI/navigation/database/network/downloader library at foundation.
+
+Test-only dependencies: JUnit 4.13.2 ([publisher](https://junit.org/junit4/)); AndroidX Test runner 1.7.0 and ext JUnit 1.3.0 (stable Google Maven metadata); Compose UI test version managed by the same BOM. They are not release dependencies.
+
+Core KTX 1.19.1 is explicitly declared for URI/preferences helpers already present transitively through Activity. The stable version was checked in Google's `androidx/core/core-ktx/maven-metadata.xml`. Lint keeps warnings fatal; only the wrapper update suggestion is narrowly excluded because Gradle 9.6.0 is the documented compatible choice. Runtime dependency graph is captured in CI artifacts.
+
+## Public media resolution probe
+
+One anonymous, bounded HTTPS GET to the public Reel URL from the [yt-dlp extractor's Reel test](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/instagram.py) returned HTTP 200, 706,607 bytes and a generic Instagram title. No `og:video`, `video_url`, `playable_url` or `video_versions` fields were present. No cookies, credentials, private endpoints or challenge retries were used. The response is not proof of a login restriction, nor proof that all public Reels fail; it is evidence that a basic public-page metadata parser is insufficient for this sample in this environment. Raw page/header data is not committed.
+
+The [Android yt-dlp wrapper](https://github.com/yausername/youtubedl-android) documents a bundled Python/extractor runtime, ABI-specific packaging, process cancellation/progress callbacks, optional FFmpeg and runtime extractor updates. Its sample storage guidance includes legacy pathways. No engine was added: the subsequent public embed experiment supports a native progressive-MP4 path without runtime/muxing dependencies.
+
+### 2026-09-27 — Owner sample and public embed
+
+- Owner verified Share reception of `Dc_WBLAuR7M`, Usage Access and overlay visibility on Samsung SM-S908U1 / Android 16. This original Reel was unavailable in the development environment's logged-out browser and embed; this is environment-specific, not a claim that it is universally unavailable.
+- Owner supplied `DGOSAUyC903` after confirming incognito playback without login. Its public embed returned matching `contextJSON` / `gql_data.shortcode_media`, `copyright_blocked=false` and a progressive `video_url`. The same request succeeded with the application's exact User-Agent and without cookies. Tracking parameters were discarded.
+- Anonymous desktop transfer produced **4,074,976 bytes**, SHA-256 `505790fbc134af30f11bc0e1ef723bf342dfe172c3c2bcf89907afb1ea33d63b`. FFprobe verified **H.264 720×1280, AAC, 26.665375 seconds**; a full FFmpeg decode completed without errors. Metadata advertised a larger size, so claims here use the actual file dimensions.
+- A different reference sample exposed `copyright_blocked=true`; probing stopped. No authenticated/private endpoint, cookie import, TLS impersonation, third-party downloader or restriction workaround was used. Raw pages and expiring CDN URLs stay out of the repository.
+- Desktop evidence proves a resolver candidate. The separately dispatched Android live gate tests the actual native parser, HTTPS implementation, Share service and MediaStore; Samsung gallery acceptance remains a distinct owner gate.
+
+## Implemented experiment boundaries
+
+- Share receiver handles `ACTION_SEND` / `text/plain`, bounded input, canonical Reel URLs, distinct redirect tokens and usable invalid/ambiguous states. A valid canonical Reel starts saving while the activity is visible; progress, Cancel, retry, completion and Open video are available. Short share tokens now resolve to a canonical target before storage allocation.
+- Overlay grants are independent of Share. A native 56dp window can be dragged; position is saved and clamped on attachment. With the optional adapter enabled, tap now attempts semantic Share/Copy acquisition and starts the same save pipeline. Start/Stop are explicit; no automatic restart.
+- Usage events retain only the current package candidate. No high-frequency render loop or screen-off wakeups are scheduled. Actual CPU/battery, delayed events, split-screen and OEM behavior are unmeasured.
+- Native HTTPS is restricted to validated public Instagram document paths and media CDN host boundaries, including every redirect. Documents are bounded to 3 MiB and transfers to 512 MiB. Private/copyright/challenge restrictions stop; optional session requests to the same documents follow public metadata/auth failures only.
+- One user-started, non-sticky `dataSync` service owns a worker, throttled progress and cancellation. Activity recreation/leaving does not restart or cancel it; Cancel is explicit in the activity/notification. No queue, automatic resume, wake lock or boot work; a rejected/expired CDN URL receives exactly one fresh resolution. A ten-minute deadline bounds each request.
+- The MediaStore writer creates a pending row under `Movies/Tap Save/`, copies off the UI thread, closes both streams, verifies size/video and expected audio metadata, then publishes. Failure/cancellation rolls back its own row. The latest job checkpoint stores only canonical target/status/output URI; expiring CDN URLs are never persisted. Before an explicit retry, exact-target app-owned pending rows are reconciled and already-published outputs prevent repeat downloads. Process death does not silently restart work.
+
+## Automated verification
+
+Foundation milestone: clean-checkout `assembleDebug`, `testDebugUnitTest` and `lintDebug` passed on `db844a4` in [CI run 36270467176](https://github.com/ahmed9461/Tap-Save/actions/runs/36270467176). This is compile/JVM/lint evidence; emulator and device acceptance are separate.
+
+The foundation code gate [CI run 36272869682](https://github.com/ahmed9461/Tap-Save/actions/runs/36272869682) passed at `0e3bc84051cbf28c7203d9cdb4c6140405c19559` on API 29/35/36: build, strict lint, 14 JVM tests and 15 instrumentation tests per job, with zero failures/errors/skips. This includes the non-activity window-context refinement.
+
+- Share: manifest resolution, actual valid/invalid intent intake, activity recreation and malformed extras.
+- Overlay: denied prerequisites, native-window attachment/removal from a non-activity context, explicit session Stop, usage-access revocation and notification Stop with worker termination.
+- Storage: exact synthetic video/audio bytes, pending-to-published transition, cancellation/retry, interrupted/truncated input, non-video rejection, source-close failure and non-overwriting filename collisions.
+- Dependency graph: Kotlin stdlib resolves to 2.4.20. AndroidX/Compose support dependencies remain; no embedded engine, database, HTTP library or scheduler dependency was added. The unminified debug APK is about 28.2 MiB; this is not a release-size measurement.
+
+An earlier storage test queried only non-pending media. Explicit pending inclusion corrected both the visibility assertion and the cleanup oracle, which would otherwise miss leaked incomplete rows. XML counts, APK checksum/size and the runtime dependency graph are retained in each CI artifact. Local Windows tool downloads stalled; build/emulator evidence comes from GitHub Actions, not a local Android SDK.
+
+Foundation API 36 artifact: `android-api-36-debug-and-reports`, artifact ID `10916063553`. Its debug APK is 29,547,938 bytes, SHA-256 `6431018b6a54390f8a96bfadad45b7a9547ca2a2e5cd43d76e5956ae9ed8ed73`. Artifacts expire after seven days; source and wrapper remain reproducible inputs. Debug signing varies between CI jobs, so these hashes identify one exact build rather than a release signing identity.
+
+### Share save milestone — 2026-09-27
+
+- Application/test code **`03a5d1f04f6b2a26c4562469ebe08029fc5caa7d`** passed [deterministic CI `36277332969`](https://github.com/ahmed9461/Tap-Save/actions/runs/36277332969): clean debug assembly, strict lint, **16 JVM + 26 instrumentation tests on each of API 29/35/36**, zero failures/errors/skips.
+- [Explicit live CI `36277332176`](https://github.com/ahmed9461/Tap-Save/actions/runs/36277332176) passed the same deterministic gate and **one real public-Reel Share save test on API 36**. `DGOSAUyC903` went through the production Share activity/service, resolver, native HTTPS and MediaStore without a resolver/transport override. The published URI contained nonzero-length video/audio with positive duration and a decodable frame; the test removed its own media afterward. Live test elapsed **6.798 seconds**, including activity/network/storage/verification/cleanup, not a phone performance benchmark.
+- The first live run failed `UNSUPPORTED`: the real embed wrapped `contextJSON` inside `requireLazy` / ServerJS JavaScript rather than a standalone JSON script. The fix decodes the JSON string only, never executes JavaScript, and bounds embedded contexts as well as document size, nesting and visited nodes. Fixtures now reproduce that observed wrapper while retaining standalone-JSON coverage. No authentication or engine fallback was introduced.
+- Controlled HTTP tests verify exact bytes, progress, cancellation, truncated/non-video bodies, login-redirect stop, copyright-blocked metadata, wrong-target/CDN rejection and parser bounds. Service tests verify screen recreation **and closure before completion**, single active job, repeated-share deduplication, notification cancellation of a blocked read within five seconds and worker termination. Pending-inclusive collection queries check rollback/reconciliation without hiding leaked files or querying deleted item URIs.
+- The tested live-job APK is **29,638,526 bytes** (about 28.27 MiB), SHA-256 **`e70a9d31a1160eb3b759ec8166f72ec5a70509c7373dcdfcb3c0fad4efcd2f68`**; artifact **`10917623772`**. Archive SHA-256 **`2b7845e5456f165a378204be0dd08d592a5493a2b2e8c7e3e8c704dd56d2a58d`** and extracted APK hash were verified before handoff. Debug APK growth versus the foundation artifact is about 88 KiB; no production dependency was added. This is an unminified debug build, not release-size evidence.
+- Remaining boundaries: one publicly accessible sample, no general Instagram guarantee; actual Samsung save/gallery/audio, force-stop, storage pressure, network-switch and OEM behavior remain owner-device gates. Short `/share/reel/` tokens remain unresolved. Direct-current-Reel identity and overlay acceptance remain separate, with no AccessibilityService added.
+
+## Device acceptance still required
+
+The owner's device is a Samsung Galaxy S22 Ultra SM-S908U1 on Android 16. The emulator suite does not exercise Instagram or Samsung-specific behavior. Keep these sessions independent: Share needs no optional permissions; the overlay/current-target investigation must not reuse a previous Share target.
+
+1. Record device/API, OEM and Instagram version without account identifiers. Deny each optional permission and confirm Share still launches.
+2. Grant through Settings, start a session, enter/leave Instagram, open its share sheet, Home and Recents; verify hide/show delays. Repeat in split-screen.
+3. Drag to each edge, rotate, stop/restart and confirm saved position remains reachable. Lock/unlock; inspect that sampling stops while locked and resumes without a stale window.
+4. Revoke overlay/usage permissions while attached, deny notifications, force-stop the app and stop from the notification. Confirm no orphan window/service and an understandable recovery route.
+5. Share a real public Reel directly from Instagram, including any `/share/reel/` form. Compare the displayed canonical URL against the actual intended Reel. ADB/test-fixture shares cannot establish this gate.
+   The owner confirmed direct URL reception and supplied `DGOSAUyC903` after logged-out playback. Short share-token acceptance remains unproven. The opt-in semantic adapter now needs real Instagram validation while switching Reels. Do not infer its success from an overlay appearing or a synthetic node tree.
+6. Resolve/save only permitted public media, verify audio/quality, Samsung gallery visibility, pending-file cleanup, cancellation, duplicates and interrupted transfers. Synthetic MediaStore evidence cannot satisfy this end-to-end saving gate.
+
+## 2026-09-28 — Direct acquisition and resolver reliability continuation
+
+Owner reports actual Share saves for some public Reels, and failures for others, on SM-S908U1 / Android 16 with Instagram **448.0.0.52.84, Arabic**. This supersedes the earlier absence of phone-save evidence without claiming comprehensive gallery/audio/lifecycle acceptance. Version 0.3 implements D-015/D-016; synthetic and live gates are tracked below as they complete.
+
+### Engine comparison measured from publisher artifacts
+
+[Maven Central library metadata](https://repo.maven.apache.org/maven2/io/github/junkfood02/youtubedl-android/library/maven-metadata.xml) reported **0.18.1**. Downloaded that release's library and FFmpeg AAR ZIPs for inspection outside the repository; they are not dependencies.
+
+| Measured artifact | AAR bytes, all four ABIs | ZIP entries expanded, including still-compressed nested payloads | arm64 nested runtime payload |
+|---|---:|---:|---:|
+| library 0.18.1 | 59,213,110 | 62,117,375 | Python ZIP: 14,305,904 bytes |
+| ffmpeg 0.18.1 | 139,371,444 | 141,294,540 | FFmpeg ZIP: 35,624,931 bytes |
+
+The extractor payload adds 3,170,726 bytes within the library. These are AAR/payload measurements, **not measured final APK deltas or installed footprints**; ABI filtering/compression/dependencies change those. The [initializer source](https://github.com/yausername/youtubedl-android/blob/master/library/src/main/java/com/yausername/youtubedl_android/YoutubeDL.kt) copies yt-dlp, unpacks Python on first initialization/version changes, then spawns a Python process per extraction. Startup latency was not benchmarked; no engine is installed in Tap Save. Wrapper upkeep also covers ABI binaries, transitive Jackson/Commons IO/AppCompat, extractor updates and subprocess cancellation. Native resolution adds no production dependency or extraction-runtime initialization, and preserves original combined MP4 audio. DASH-only/best-separate-stream support remains a limitation, not an implied quality guarantee.
+
+### Multiple public probes
+
+- `DGOSAUyC903`: current anonymous embed still exposes matching non-copyright-blocked media.
+- `Cop84x6u7CP`: independent Reel from the maintained extractor's public URL fixtures; current anonymous embed exposes matching non-copyright-blocked media. Desktop download: **2,424,478 bytes**, SHA-256 `3fa42f09cb47b6d41ba4a9a797eb27385ca8b2ccab6d90a43367a9041d8581bb`; FFprobe: **H.264 720×1280, AAC, 19.108617 seconds**. Full FFmpeg decode passed. This is included in the separate real Android Share gate.
+- `Dc_WBLAuR7M`, `CDUMkliABpa`, `CWqAgUZgCku`: anonymous embed and alternate public post-permalink probes returned HTML without media fields here. They are recorded as unavailable metadata in this environment; no claim that these Reels are private or universally unavailable. A follow-up differential probe below identified the representation difference for one of these samples.
+- No owner-authenticated test has occurred. Login/session fallback is optional and awaiting real account acceptance. Raw HTML, signed CDN URLs, media captures and inspected AARs are not committed.
+
+### Owner test sequence for 0.3
+
+1. Share → Tap Save with optional adapter/session disabled; test several public Reels, including the confirmed sample. Verify Movies/Tap Save, video/audio, cancellation and failure codes.
+2. Enable **Tap Save • Instagram only** in Android Accessibility settings, keep overlay/Usage Access enabled, and start the overlay. On a Reel tap ↓. Expect brief Share/Copy and link-reading handoff, progress, then ✓. Switch to a different Reel and repeat; confirm the saved identity changes. An acquisition failure code identifies the missing control/handoff instead of silently reusing an old link.
+3. Optionally Connect Instagram, sign in on Instagram's own page, and choose Use session. Retry a public Reel that fails anonymously. Public resolution still runs first. Check success/failure diagnostics; owner login and session benefit are not presumed.
+4. Disconnect/Clear, verify disabled status, and retry anonymously. Test successive taps/cancellation, lock/unlock, navigation away, permission revocation and notification Stop without an orphan overlay or pending file.
+
+The shipping APK does not include the separate `com.instagram.android` UI fixture. Its Arabic/English controls test platform mechanics and fresh/stale clipboard handling only; they do not validate Instagram's actual node tree.
+
+### Follow-up: maintained engine differential probe
+
+PyPI stable `yt-dlp 2026.8.19` (3,185,533-byte wheel, kept outside the repository) resolved `DGOSAUyC903` and `CDUMkliABpa` anonymously; `Dc_WBLAuR7M` still failed. No curl-cffi/TLS impersonation was available, and explicitly disabling it retained success. The successful path used the public `/p/<code>` HTML document. The native probe originally omitted an explicit HTML Accept header: adding **Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8** alone exposed matching `code`, `video_versions` and `has_audio` in its JSON scripts, with Tap Save's own User-Agent and no cookies, bootstrap/API requests, browser impersonation or JavaScript execution.
+
+The native chain now includes that public permalink after page/embed and before any optional session. Existing bounded JSON traversal handles the observed modern prefetch structure. This reproduces the engine's useful public result without its runtime. Three live Android samples now cover the two embed candidates plus this modern metadata case. Desktop first progressive variant for `CDUMkliABpa`: **3,257,414 bytes**, SHA-256 `7e98c20ed25d8dcd68c81b84e06fb2bad8754abfe233296726423e7f6c257aee`, **H.264 720×1280, AAC, 13.546667 seconds**, full decode passed. The engine additionally lists separate DASH variants; those remain outside the native combined-MP4 scope. The success UI reports whether public metadata or an Instagram session was used.
+
+### Final 0.3 verification — 2026-09-28
+
+- Source **`411ee70d79b48e779b0a06a6a7e03b292eee4d05`** passed [CI `36354556280`](https://github.com/ahmed9461/Tap-Save/actions/runs/36354556280): clean assembly, strict lint, **18 JVM + 39 instrumentation tests on each of API 29/35/36**, zero failures/errors/skips.
+- Direct path: a semantic click on the actual floating button in the Arabic disposable fixture drove Share/Copy, fresh focused clipboard acquisition, the real controlled HTTP transfer and exact-byte MediaStore publication. English acquisition, stale clipboard, ambiguous controls and wrong foreground app were exercised independently. Session broker/profile startup/clear, cookie origin/redirect confinement, public-first ordering, progressive quality selection, short-link normalization and exactly one expired-link refresh passed. These tests establish platform mechanics and invariants, not production Instagram selectors or authenticated-account reliability.
+- [Live CI `36354557958`](https://github.com/ahmed9461/Tap-Save/actions/runs/36354557958) at the same source passed the deterministic suite and **three actual public Share saves**: `DGOSAUyC903`, `Cop84x6u7CP`, `CDUMkliABpa`. No resolver/HTTP override, account cookies or fixture Instagram app was used in the live suite. Each published MediaStore URI had nonzero video/audio, positive duration and a decoded frame, then its test output was removed. Test durations were 3.156, 10.779 and 1.664 seconds respectively, including network/storage/verification/cleanup; these are not phone performance benchmarks.
+- Live-job artifact **`10943980658`**, archive SHA-256 **`6784f4a6a5c702a3208d05afbc0a2fef85dcecd5b8b3e9cba66588c67bb50943`**. Extracted tested APK: **29,709,819 bytes** (about 28.33 MiB), SHA-256 **`155ab82f2376960a11d27d33e87a62d25f9b4788d626f796a8d9131e14524ce3`**. Archive and APK hashes, summary counts and individual live cases were checked before delivery. APK growth over 0.2 is 71,293 bytes (69.6 KiB); runtime dependency graph has no new production library. Unminified debug size is not a release-size benchmark.
+- The delivered debug certificate differs from the previous delivered APK, requiring replacement installation and re-enabling settings; there is no stable release key yet. Production Arabic Instagram acquisition across successive Reels, optional owner login/session benefit/clear, Samsung gallery/audio/quality and OEM/battery/force-stop acceptance remain open. Plan 0001 remains active.
+
+### 0.4 target-device control repair and actual UI
+
+The owner reproduced `COPY_ACTION_FAILED` on SM-S908U1 / Android 16, Instagram 448.0.0.52.84 in Arabic. An explicit standalone ADB instrumentation probe inspected only Instagram control metadata; ordinary UIAutomator dumping could not reach idle while Instagram updated. The live sheet had 224 nodes and two semantic Copy matches: `id/label` (non-clickable TextView) and `id/button` (ImageView, clickable but without ACTION_CLICK). The latter's direct action returned **false**. Its containing LinearLayout, two parent levels up and inside `id/direct_external_reshare_row`, advertised ACTION_CLICK and returned **true**. The sheet stayed open after Copy. This is a real reproduction and successful supported-action dispatch, not yet a full new-app acquisition/save result.
+
+Production Copy lookup now scopes to that observed row where available, ranks specific IDs then supported semantic actions/descriptions before Arabic/English text, refreshes nodes and walks actionable ancestors without crossing the row/sheet boundary. Window-content/state events plus bounded readiness retries drive the request. The adapter closes its own sheet before a focused Tap Save activity reads a fresh single link; it never reads clipboard contents from the background overlay/service. The local last-request trace records stages, action IDs, timing and focus/freshness flags, excluding captions, contacts, links and cookies. The owner disconnected the phone before installing 0.4, so Samsung focused-clipboard/full-save acceptance remains open.
+
+The shipping Home, Settings, sequential setup and circular vector/progress overlay replace the previous development panel. No production dependency, fake screen, navigation library or media-history database was added. First-run Share escape stays visible on a narrow display; size/opacity are bounded, location/quality describe the implemented fixed behavior, and diagnostics are under Advanced. Visual evidence uses actual activity/native-window rendering. AGP collects images before uninstall via `additionalTestOutputDir`; Compose/PixelCopy captures wait for redraw, because display screenshots taken while the test framework suppresses drawing can show the preceding frame. The separate diagnostic package is neither bundled nor a dependency of Tap Save.
+
+### Final 0.4 verification — 2026-09-28
+
+- Source **`e8fbf5888c4a8414462a514b1a457561aaf9b499`** passed [CI `36422892820`](https://github.com/ahmed9461/Tap-Save/actions/runs/36422892820): assembly, strict lint, **19 JVM + 44 instrumentation tests on each API 29/35/36**, zero failures/errors/skips. Regression coverage includes unsupported decorative-image clicks, actionable ancestors, Arabic/English semantics, delayed readiness, failure cleanup, actual overlay-to-MediaStore, focus/freshness guards, real UI and prior session/resolver/cancellation/storage invariants. Reviewed final API 36 Home/setup/Settings/system bars and native control states, also inspected API 29 native state captures.
+- [Live CI `36419880160`](https://github.com/ahmed9461/Tap-Save/actions/runs/36419880160), source **`3e5f0e521d96b64a60765cca4fb879cf1431de39`**, passed three production public Share saves without account/transport overrides: `DGOSAUyC903` (2.529 s), `Cop84x6u7CP` (4.627 s), `CDUMkliABpa` (2.083 s). Each published MediaStore output passed audio/video metadata and frame decoding and was removed by its test. Durations include verification/cleanup, not phone benchmarks. Individual XML cases were checked, not just aggregate counts. Subsequent changes through `e8fbf58` affect system bars, capture helpers and CI only; acquisition/resolver/transfer/storage are unchanged.
+- Final API 36 artifact **`10970244215`**, archive SHA-256 **`c46addd590de126824b61b5e48cf2b31dc93ec91356573577d9db392dbe71851`**. Delivered APK: **29,855,521 bytes**, SHA-256 **`9b7ebc57a5c9e4caec72a5a24d2f684ba97a52ba82c3f3fd8ccbd249b1c4eafc`**. Live artifact `10969118849`, archive SHA-256 `524b3daf2253ae3e68ae96bdd0cdccc4051b98e72b5ad2d02597cd9076d71344`. Archive checksums/CRC, test summaries, APK size/hash and signer were verified before delivery.
+- Final APK signer SHA-256 `e6ebd81995f82aec447d9f16c29c92486e55107d3c6a866c03a238e4aadc3b4f` differs from the installed phone certificate. No in-place update is possible with that key; replacement clears app settings/local session. No owner app was replaced or reset. APK/checksum, verification JSON and Arabic checklist are in task outputs. The standalone `io.github.ahmed9461.tapsave.probe` package remains on the disconnected phone pending removal.
+- Still open: complete Samsung ↓/focused clipboard/save on successive Reels, actual optional account login/session benefit/clear, original audio/best-progressive quality acceptance, gallery UX, OEM interruption/force-stop and battery. Three successful anonymous samples do not establish general Instagram compatibility. Plan 0001 remains active.
+
+### 0.5 Arabic and stable personal release — 2026-09-28
+
+Owner reports 0.4 works very well with no observed problems. Added complete native Arabic resources/RTL and the platform per-app language entry, preserving acquisition/resolution/download/storage logic. No locale library, font or production dependency added.
+
+- Source `902ceae1fe65822958191c3732a88a368c3864bc`: [CI 36443683479](https://github.com/ahmed9461/Tap-Save/actions/runs/36443683479), build/strict lint and 19 JVM + 46 instrumentation tests on API 29/35/36, zero failures/errors/skips. Native Arabic UI/recreation was tested and visually reviewed on API 35/36; Arabic resources and all plural forms also pass on API 29.
+- [Signed CI 36443689015](https://github.com/ahmed9461/Tap-Save/actions/runs/36443689015): certificate/package/version verification, non-debuggable release and successful same-key baseline 4 → candidate 5 replacement. Instrumentation confirmed retained setup/overlay preferences and exact published video bytes, then removed only its test output. It used a same-source baseline, not the owner’s old debug certificate.
+- Release artifact `10980425742`, ZIP SHA-256 `1ed128892d9d9cb5b254d3c3f8b12de6d553ad8b03cc056d7d4fd140fbb2fe0e`; APK 23,211,148 bytes, SHA-256 `e901ddc1c3de5d0db174c2acaa7b3b4ec3793018ca02770fc6897d98b73c2225`. Certificate SHA-256 `c047a8350f478a6dd72b4000b40a958dac992cbbeb3294a17e8a12bf0ed521ae`; permanent private key is outside Git with an owner backup and encrypted Actions secrets. Archive/CRC, summary counts, APK bytes/hash and certificate checked locally before delivery.
+- Strict lint caught configuration-unaware resource reads; switched to Compose LocalResources. The API-33 manifest attribute is intentionally ignored by older Android versions, with a scoped documented lint annotation. One API 35 attempt failed downloading its emulator image before any app tests. The combined exclusion did not exclude release-only assertions, so explicit release/network tests now share one ManualGate annotation; the debug suite no longer runs release-only assertions. No test failure was hidden or skipped.
+- Owner device was not accessed or reset. Old 0.4 private CI key is unavailable, so moving to the permanent identity requires one replacement; later same-key updates preserve data. Detailed owner-account/OEM/battery tests remain separate. Plan 0001 remains active.
+
+### 0.5.1 connected-phone reliability repair — 2026-10-01
+
+Device: owner-authorized SM-S908U1, Android 16/API 36, Instagram 448.0.0.52.84 Arabic. All setup permissions were already enabled. The owner entered credentials on Instagram's actual isolated login page and enabled its local session; no credentials/cookies were inspected or exported. Only semantic Reel/Share controls and Tap Save's UI were operated. The disposable Instagram fixture was never installed on this phone.
+
+**Reproduction and repair:** Signed 0.5.0 completed one direct session save of `DcIAoWLNkXa`, then repeatedly accepted Copy but rejected a stale clipboard. The old trace sent Back roughly 190 ms after Copy. Independent focused probes with the sheet alive received different fresh targets (`Dd2CXuwPzsk`, `Dd1zUwDMa_R`), with clipboard timestamps 538/333 ms after their copy stages began. The fix keeps Instagram's sheet alive during focused capture, waits for that Activity's destruction, then restores only its owned sheet. No background clipboard read or relaxed timestamp/identity validation. First fixed trace: Copy accepted 781 ms; focused stale clipboard 984 ms; fresh link 1591 ms; Back 1939 ms; restored Reel 2351 ms. These are one acquisition's elapsed times, not fixed production delays.
+
+The controlled fixture now delays Copy by 650 ms and cancels its pending write if its sheet is dismissed. The regression requires fresh capture before Back, restored Reel and no pending request. Readiness remains event-driven and bounded: control 12 s, handoff 3 s, reader at most 20 attempts 100 ms apart, cleanup 2.5 s after closure. Production diagnostics record at most 48 structural download lines of 400 characters, without response/clipboard contents, cookies or signed media URLs.
+
+**Six controlled phone saves after the update:**
+
+| Reel | Actual entry | Resolution | Published bytes | Duration (s) |
+|---|---|---|---:|---:|
+| `DduRAimu-MT` | Floating button | session-page | 1,388,984 | 8.728 |
+| `DbdCkG7xh3E` | Floating button, next Reel | session-page | 4,120,793 | 36.593 |
+| `Dd4c15oM67P` | Floating button, next Reel | public-page | 1,889,628 | 14.279 |
+| `Dag885hsRB2` | Floating button, next Reel | session-page | 1,139,044 | 10.958 |
+| `DYOiP8Fzc9G` | Instagram Share → external Share → Android chooser | session-page | 6,032,102 | 31.438 |
+| `DcQ2yRzhzpg` | Native Share, Cancel during resolution, then Retry | session-page | 2,047,870 | 12.280 |
+
+Each exact target row had `is_pending=0`, matching published file size, 720×1280 H.264 video and AAC audio. Full FFmpeg video/audio decoding passed; volume analysis confirmed non-silent audio. This verifies saved files, not an assertion of maximum possible Instagram quality or Samsung Gallery visual acceptance. The public case never consulted the enabled session; the other five exhausted the three public documents before local-session metadata succeeded. No additional extraction engine was necessary for these observed failures; the previously measured runtime/maintenance costs remain unjustified by this evidence.
+
+Cancel completed in 729 ms during public resolution, with cancelled/retry UI, no target row and no transfer service. Retry saved successfully. A later actual floating tap on that same Reel returned `ALREADY_SAVED` in 34 ms, with the exact same MediaStore row/file. Original eight owner files plus the pre-fix test file retained their IDs/metadata. Final pending-inclusive query (`includePending=1`, `is_pending=1`) was empty; transfer service had stopped. Extra saves that appeared outside the six controlled cases were excluded from these test counts. No media was deleted. The standalone probe was uninstalled after testing, preserving the main app/session and active overlay.
+
+**Build, live-network and signed-update proof:** Shipping source `edb902f6c5afa9b2b30efbe07e4d7a8d1641a260`.
+
+- [Matrix 36789484387](https://github.com/ahmed9461/Tap-Save/actions/runs/36789484387): build/strict lint, 19 JVM + 48 instrumentation tests per API 29/35/36, zero failures/errors/skips. Report ZIP SHA-256 by API: 29 `573c8482dbdd244f8eeb25e3402b6bc7af2fddb29306d78ba0bfc307bef0d0ee`; 35 `fcb8f755548627687a37103879985249451057fefbff07d803a7ff20bce92cea`; 36 `4c1519691c85fe8c3429a3af4e545ec332e40ebee4bc305da05c63e41c423712`.
+- [Live 36789595846](https://github.com/ahmed9461/Tap-Save/actions/runs/36789595846): three independent anonymous production Share saves for `DGOSAUyC903`, `Cop84x6u7CP`, `CDUMkliABpa`, audio/video metadata and decoded frame. Individual XML results checked. Artifact `11132045984`, ZIP SHA-256 `fbc6597949c2cfe115af3eb5f0878e3e15fcba37ce7bf70650f2b94b5a7bf8cd`.
+- [Signed 36789479757](https://github.com/ahmed9461/Tap-Save/actions/runs/36789479757): non-debuggable signature/package/version and same-key code 5 → 6 settings/exact-media retention passed. Artifact `11131711868`, ZIP SHA-256 `cf5f51a2173e10aee944cbfefa52d83a1a056a1a538388e333cc1ec9c23ffcf5`.
+- Delivered/installed 0.5.1/code 6 APK: 23,211,148 bytes, SHA-256 `c9a77a15dd1ec76eb78a74e80aead3ed345889bb4263fed874f674d08a190105`, retained certificate `c047a8350f478a6dd72b4000b40a958dac992cbbeb3294a17e8a12bf0ed521ae`. ZIP digest/CRC, test reports, APK digest and public signer checked. Actual S22 `adb install -r` retained Arabic/setup/permissions and authenticated session. No key or owner data reset.
+
+An additional probe-only commit's [run 36790368554](https://github.com/ahmed9461/Tap-Save/actions/runs/36790368554) passed API 29/36 but failed seven API 35 fixture cases before acquisition. Logs showed the fixture displayed and a UiAutomation callback posted to a dead thread while switching flags after Compose tests. Test-only `TapSaveTestRunner` keeps `FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES` for all automation access, avoiding that reconnect; fixture readiness failures now report both automation and adapter root packages. This follows the flag-switch behavior in [AOSP Instrumentation](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android-15.0.0_r1/core/java/android/app/Instrumentation.java). Follow-up matrix/update results belong in PROJECT_STATUS; shipping app is unchanged.
+
+Plan 0001 remains active for actual account clear (session preserved), OEM interruption/force-stop, storage/network pressure, battery and broader Instagram variants. These successful samples do not establish universal compatibility.
+
+**Test-harness follow-up verified:** Source `23c384c0281b35304ab21ea0cd0a1a282d2dd4b2` passed [matrix 36791713644](https://github.com/ahmed9461/Tap-Save/actions/runs/36791713644), build/lint and the same 19 JVM + 48 instrumentation cases per API 29/35/36, zero failures/errors/skips. [Signed 36791751852](https://github.com/ahmed9461/Tap-Save/actions/runs/36791751852) passed both update phases with the new runner. Report archive hashes/CRC and individual XML/update results checked. Matrix ZIP SHA-256: API 29 `e1ecde95508e780897c6eda5b2109eb0c0002a20c47b310af342147a92b29b9e`; API 35 `20da287ac95efc473f355b618d930a9e8f7e667f55ede5bac32b43d6dd2ff8fc`; API 36 `eb8db1aa78cde037405dadeb7b0c905996a876fb05e5032885b6d2725900c399`; signed `e273abc7b92cc0d2deeb5ef38628ddf19b6955ea57c83b01721ef779d3d56f85`. Application runtime source is unchanged; the delivered APK remains the phone-tested `edb902f` build identified above.

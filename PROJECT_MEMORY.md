@@ -2,12 +2,22 @@
 
 ## Product
 
+### Current continuation — 2026-10-01
+
+Installed signed 0.5.1/code 6 on the S22 / Android 16 / Instagram 448.0.0.52.84 Arabic. Reproduced stale clipboard after accepted Copy: closing Instagram's sheet too soon could cancel its asynchronous write. Keep the sheet alive through focused fresh-link capture, wait for that Activity to close, then restore the Reel before starting the save. Never read clipboard data from the background or accept an old link. D-019 records the measured sequence.
+
+Six different controlled real-phone saves passed: four successive direct taps, actual native Share/chooser, and cancellation followed by Retry. Every exact MediaStore file passed full 720×1280 H.264/non-silent AAC decoding. One resolved publicly without consulting the session; five needed the owner's locally enabled session after public metadata was absent. Dedup reused the same row. Original media metadata, Arabic/setup/permissions and session survived the update. The temporary probe was removed; no owner data was reset.
+
+Shipping source `edb902f` passed build/strict lint, 19 JVM + 48 instrumented tests per API 29/35/36 (`36789484387`), three anonymous live Share saves (`36789595846`) and same-key code 5 → 6 update with exact media-byte retention (`36789479757`). Later standalone probe/test-harness source `23c384c` passed the same matrix counts (`36791713644`) and signed update (`36791751852`). Keep one non-suppressing UiAutomation policy across Compose/accessibility tests: reconnecting flags produced an API 35 dead-callback-thread failure before the fixture gate. No new production dependency or heavy extraction engine. Keep the retained signing identity and Plan 0001; never install the fake Instagram fixture on this phone.
+
+Advanced diagnostics retain only one bounded structural trace, excluding clipboard/page contents, passwords, cookies and signed media URLs. Preserve public-first/session-second ordering and stop at restrictions/rate limits. Actual account clear is untested to preserve the owner's session; controlled clear/origin tests pass. Remaining gates are OEM interruption/force-stop, storage/network pressure, battery and broader Instagram variants, not a universal-compatibility claim.
+
 **Name:** Tap Save  
 **Repository:** `ahmed9461/Tap-Save`  
 **Platform:** Android only.  
 **Usage model:** Personal/private use.  
 **Primary language:** Kotlin.  
-**UI preference:** Native modern Android UI, expected to use Jetpack Compose unless implementation research finds a stronger reason not to.
+**UI:** Jetpack Compose activities; native View for the floating control.
 
 ## Core idea
 
@@ -78,6 +88,46 @@ The ideal interaction is:
 
 No full-screen interstitial, no ad, no unnecessary confirmation for the normal successful path.
 
+## Foundation implementation
+
+- Owner's live-validation device: Samsung Galaxy S22 Ultra SM-S908U1, Android 16. Owner confirmed Usage Access, overlay visibility in Instagram and Share URL receipt. Owner now reports some actual public Reel saves and failures on others; Instagram 448.0.0.52.84, Arabic. Detailed gallery/quality/lifecycle acceptance remains open. Keep it independent from current-Reel identification.
+
+- One shipping `app` module, `instagram-fixture` for disposable emulator tests only, and a standalone `device-probe` diagnostic package; neither helper is an application dependency. Namespace/application ID `io.github.ahmed9461.tapsave`; minimum API 29, compile/target API 37. Minimum 29 avoids legacy storage branches; owner-device API 36 save/update paths are verified.
+- Pinned versions and their primary sources are in `docs/TECHNICAL_SPIKE.md`; use the wrapper and `docs/BUILDING.md` commands.
+- `SharedTargetParser` isolates Instagram URL normalization. Direct Reel links are canonicalized and tracking removed. `/share/reel/` tokens are classified separately; they are not Reel IDs. Never treat the last shared target as the Reel currently on screen.
+- Share activity is independent of overlay/usage/notification permissions. The native pipeline performs public resolution, cancellable transfer and MediaStore publication. `DGOSAUyC903`, `Cop84x6u7CP` and `CDUMkliABpa` passed anonymous live Android saves at `3e5f0e5` (CI `36419880160`); this is emulator evidence, not Samsung acceptance or broad Instagram compatibility.
+- The optional native overlay has a user-started `specialUse` session and Stop controls. Usage events provide approximate app context only. The opt-in accessibility adapter is package-filtered to Instagram and reads semantic nodes only during an explicit user request: at most 12 seconds for controls, 3 seconds for focused handoff and 2.5 seconds for owned-sheet cleanup after the reader closes. No clipboard listener, boot receiver, wake lock or analytics. Both explicit Share and overlay saves use the same transfer service.
+- Current spike limitations and device evidence belong in `TECHNICAL_SPIKE.md`. Do not call the full phase complete from build/emulator evidence alone.
+- Plan 0001 Step 1 passed the clean CI build/unit/lint gate; Step 3 URL reception passed owner-device validation. Keep the plan active until its remaining overlay/current-target and save acceptance gates are met.
+- `MediaStoreVideoWriter` uses pending rows and rollback. The Share pipeline adds a single short `dataSync` service, one job checkpoint, exact-target app-owned row reconciliation and deduplication. Build/runtime evidence must distinguish synthetic fixtures, a real public resolver/download and owner-device acceptance.
+- CI covers the minimum API 29 and API 35/36 with real emulator integrations. Pending-row cleanup tests must explicitly include pending items in MediaStore queries; a default query can hide a leaked incomplete row.
+- Public embed metadata can be a `contextJSON` string inside a `requireLazy` / ServerJS wrapper. Decode bounded JSON literals without executing JavaScript. Keep fixtures faithful to observed response structure; standalone JSON fixtures previously missed this integration defect. Public live tests are explicit, separate from deterministic CI, and stop at restrictions.
+
 ## Repository workflow
 
 Agents must follow `AGENTS.md`, the active plan, and the project documentation. Stable decisions belong in `docs/DECISIONS.md`; chronological work belongs in `docs/PROGRESS_LOG.md`.
+
+## Version 0.3 experiment boundaries
+
+- Public page/embed/post-permalink resolution with an explicit HTML Accept header always precedes optional authenticated requests. Session cookies are read through private IPC from a dedicated `:instagram` WebView process/profile; only the opt-in flag is stored by the main process. No password field scraping, JavaScript bridge, credential logging, third-party downloader, or cookie forwarding to media/CDN hosts. Disconnect disables immediately, cancels a transfer and clears the isolated profile. Owner login/fallback passed on the S22 in 0.5.1; actual-account clear remains untested.
+- Direct acquisition never reuses a previously shared URL or stale clipboard. It selects a unique semantic Share control and Copy link control (Arabic/English), then validates a timestamped clipboard handoff. Missing/ambiguous controls, another app, lock, interruption and timeout fail with acquisition codes and the independent Share fallback. The actual Instagram 448 Arabic Copy tile, successive-Reel identity and complete Samsung handoff passed in 0.5.1.
+- Rank available progressive MP4 variants by advertised dimensions, preserve original bytes/audio, and refresh resolution once for an expired CDN URL. No DASH muxing or promise of Instagram's absolute maximum quality. Diagnostics distinguish auth, rate limit, unavailable metadata, incompatible extraction, network, expired URL and storage errors without response bodies/session/CDN URLs.
+- `/share/reel/` tokens are resolved to canonical Reel identities before allocation/deduplication. The checkpoint also retains the sanitized requested link so Share UI can follow normalization.
+- The disposable `com.instagram.android` fixture tests Android accessibility/clipboard semantics, not the real Instagram app. The runner refuses non-emulators or an existing Instagram installation. Never install this fixture on the owner's phone or distribute it as the Tap Save APK.
+
+## Historical 0.4/0.5 evidence (superseded by the current continuation above)
+
+- Owner update after installing 0.4: the app works very well and no problems were observed. Accept this as owner confirmation of normal use; do not infer dedicated authentication, battery or stress-test results. The owner next requested Arabic and a persistent signing identity. This continuation stays under Plan 0001.
+- Version 0.5 adds Android Arabic resources/RTL and the Android 13+ per-app language settings entry. Personal releases must use the existing protected PKCS12 identity and GitHub signing secrets documented in `docs/SIGNING.md`, never ephemeral debug keys. Keep the checked-in public certificate and application ID; increment `app/version.properties`. Source `902ceae` passed build/strict lint, 19 JVM + 46 instrumentation tests per API 29/35/36 (CI `36443683479`), with native Arabic UI/recreation evidence on API 35/36. Signed CI `36443689015` verified non-debuggable signature/version and version-code 4 → 5 replacement with retained settings/media; no phone install/reset occurred. The new stable key requires one initial replacement of the old unrelated debug-key installation; future updates reuse this identity.
+
+- New owner evidence (2026-09-28): 0.3 direct acquisition fails `COPY_ACTION_FAILED` with Arabic Copy link visibly open. Earlier plain-Button fixtures did not represent a rejected click or nested action tile. The S22 Ultra was connected by ADB for scoped control inspection, then disconnected for personal use before 0.4 installation. Do not assume it remains available. No owner app/session was replaced or cleared.
+- Live S22 inspection isolated the cause: `com.instagram.android:id/button` is an ImageView with the Copy link content description and `clickable=true`, but no supported ACTION_CLICK. Calling it returned false. Its enclosing LinearLayout two levels up advertises ACTION_CLICK and returned true. `id/label` supplies a separate non-clickable Arabic label in the same tile. Use supported actions and stop ancestor traversal at `id/direct_external_reshare_row`; do not click the overall bottom sheet. This proves the real control dispatch, not yet the new app's complete clipboard/save flow.
+- Version 0.4 uses real Home/Settings/sequential setup screens and a native circular vector/progress control. Home has one master switch; optional session, permission management and bounded size/opacity/reset controls live in Settings. Safe local diagnostics live under Advanced. Share needs none of the overlay/acquisition permissions. The separate temporary phone probe has no activity, network permission or background service; remove package `io.github.ahmed9461.tapsave.probe` when the phone is next available.
+
+- Source `e8fbf5888c4a8414462a514b1a457561aaf9b499`: CI `36422892820` passed build/strict lint, 19 JVM and 44 instrumentation tests on each of API 29/35/36, zero failures/errors/skips. Coverage includes the actual floating button through fixture acquisition/HTTP/MediaStore, rejected decorative-image actions, supported ancestors, delayed readiness, failure cleanup, fresh/stale/ambiguous/other-app cases and actual Home/setup/Settings. Rendered activity and native overlay states were visually reviewed.
+- Live CI `36419880160` passed three real anonymous Share saves with audio/video metadata and decoded frames at `3e5f0e5`. Subsequent changes through `e8fbf58` affect system bars, rendering capture and CI only; acquisition/resolver/transfer/storage code is unchanged. Delivered 0.4 APK: 29,855,521 bytes, SHA-256 `9b7ebc57a5c9e4caec72a5a24d2f684ba97a52ba82c3f3fd8ccbd249b1c4eafc`. Its CI debug signer differs from the installed phone build; replacement would clear app settings/session. No production dependency added; Plan 0001 remains active for complete Samsung acquisition, owner session, OEM and battery acceptance.
+- Android automatic notification group summaries may reuse a numeric ID with a different tag. Lifecycle tests must identify the actual untagged overlay notification and worker, not assume ID alone identifies it. A foreground-service start must fulfil its foreground contract before stopping after a prerequisite changes between caller check and service startup.
+
+### Current personal release
+
+Version 0.5.1/code 6: 23,211,148 bytes, SHA-256 `c9a77a15dd1ec76eb78a74e80aead3ed345889bb4263fed874f674d08a190105`. Stable certificate SHA-256 `c047a8350f478a6dd72b4000b40a958dac992cbbeb3294a17e8a12bf0ed521ae`. Installed in place on the owner's S22. Keep this identity, increase `app/version.properties` and use the manual signed-release workflow; do not generate another key or reset app data.

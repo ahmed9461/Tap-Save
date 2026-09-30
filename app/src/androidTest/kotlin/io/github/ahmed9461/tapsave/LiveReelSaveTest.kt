@@ -1,0 +1,66 @@
+package io.github.ahmed9461.tapsave
+
+import android.content.Intent
+import android.media.MediaMetadataRetriever
+import androidx.test.core.app.ActivityScenario
+import androidx.test.platform.app.InstrumentationRegistry
+import io.github.ahmed9461.tapsave.download.*
+import io.github.ahmed9461.tapsave.platform.ShareResult
+import io.github.ahmed9461.tapsave.platform.instagram.InstagramShareParser
+import io.github.ahmed9461.tapsave.platform.instagram.PublicReelMetadata
+import io.github.ahmed9461.tapsave.share.ShareActivity
+import org.junit.Assert.*
+import org.junit.Test
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.CLASS)
+annotation class ManualGate
+
+/** Explicit workflow-dispatch gate, excluded from deterministic CI. Never downloads an arbitrary URL. */
+@ManualGate
+class LiveReelSaveTest {
+    @Test fun ownerReelShareSavesPlayableVideoAndAudio() = saveReel(InstrumentationRegistry.getArguments().getString("liveReel")!!)
+    @Test fun secondPublicReelShareSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/Cop84x6u7CP/")
+
+    @Test fun modernPermalinkPublicReelSavesPlayableVideoAndAudio() = saveReel("https://www.instagram.com/reel/CDUMkliABpa/")
+
+    private fun saveReel(raw: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val target = (InstagramShareParser.parse(raw) as ShareResult.Target).target
+        SaveService.testFactory = null
+        instrumentation.runOnMainSync { SaveUiState.current = null }
+        val intent = Intent(context, ShareActivity::class.java).setAction(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, target.canonicalUrl)
+        ActivityScenario.launch<ShareActivity>(intent).use {
+            waitForSave(120_000) { SaveUiState.current?.let { state -> !state.active } == true }
+            val state = SaveUiState.current!!
+            val diagnostics = if (state.phase == SavePhase.FAILED && state.failure == SaveFailure.Reason.UNSUPPORTED) {
+                // A bounded diagnostic of the same public documents; no bodies or signed URLs are logged.
+                listOf(target.canonicalUrl, "${target.canonicalUrl}embed/").map { url ->
+                    try {
+                        val (_, html) = HttpTransfer().page(url, TransferCancellation())
+                        val parsed = PublicReelMetadata.parse(html, target.key.substringAfterLast(':'))
+                        "embed=${url.endsWith("embed/")}, chars=${html.length}, mediaFields=${Regex("video_url|video_versions|og:video").findAll(html).count()}, contextFields=${Regex("contextJSON").findAll(html).count()}, parsed=${parsed != null}"
+                    } catch (failure: Exception) {
+                        "${failure.javaClass.simpleName}: ${(failure as? SaveFailure)?.reason}; ${failure.stackTrace.firstOrNull { frame -> frame.className.startsWith("io.github.ahmed9461") }}"
+                    }
+                }.joinToString("; ")
+            } else ""
+            assertEquals("Public resolution failed: ${state.failure}; $diagnostics", SavePhase.SAVED, state.phase)
+            assertTrue("Expected public strategy: ${state.diagnostic}", state.diagnostic?.startsWith("public-") == true)
+            val uri = state.uri!!
+            try {
+                assertEquals(uri, reconcileMedia(context, target))
+                val metadata = MediaMetadataRetriever()
+                try {
+                    metadata.setDataSource(context, uri)
+                    assertEquals("yes", metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO))
+                    assertEquals("yes", metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO))
+                    assertTrue(metadata.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toLong() > 0)
+                    assertNotNull(metadata.getFrameAtTime(0))
+                } finally { metadata.release() }
+                assertTrue(context.contentResolver.openAssetFileDescriptor(uri, "r")!!.use { it.length > 0 })
+            } finally { context.contentResolver.delete(uri, null, null) }
+        }
+    }
+}
