@@ -19,7 +19,7 @@ for phase in ('seed','verify'):
         if 'Success' not in result: raise SystemExit('Update installation failed')
     result=run(['adb','shell','am','instrument','-w','-e','class',package+'.ReleaseUpgradeTest','-e','upgradePhase',phase,
                 '-e','expectedVersion',str(code-1 if phase=='seed' else code),
-                package+'.test/androidx.test.runner.AndroidJUnitRunner'])
+                package+'.test/io.github.ahmed9461.tapsave.TapSaveTestRunner'])
     Path('app/build/reports/upgrade-'+phase+'.txt').write_text(result)
     if 'OK (1 test)' not in result or 'FAILURES!!!' in result: raise SystemExit(result)
 Path('app/build/reports/upgrade-verification.json').write_text(json.dumps({'baseline_version_code':code-1,'candidate_version_code':code,

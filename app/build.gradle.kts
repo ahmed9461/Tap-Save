@@ -17,7 +17,7 @@ android {
         targetSdk = 37
         versionCode = providers.gradleProperty("tapSaveVersionCode").orElse(appVersion.getProperty("versionCode")).get().toInt()
         versionName = appVersion.getProperty("versionName")
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "io.github.ahmed9461.tapsave.TapSaveTestRunner"
         testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/sdcard/Android/media/io.github.ahmed9461.tapsave/ui-checks"
     }
 

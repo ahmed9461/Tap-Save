@@ -54,10 +54,14 @@ class CurrentReelIntegrationTest {
     private fun launch(extra: String = "") {
         shell("am force-stop com.instagram.android")
         shell("am start -W -n com.instagram.android/.FixtureActivity $extra")
-        waitForSave {
+        try { waitForSave {
             val root = automation.rootInActiveWindow
             root?.packageName?.toString() == "com.instagram.android" &&
                 root.findAccessibilityNodeInfosByText("TEST FIXTURE").isNotEmpty()
+        } } catch (failure: AssertionError) {
+            throw AssertionError("Fixture not visible to UiAutomation: automationRoot=" +
+                automation.rootInActiveWindow?.packageName + "; adapterRoot=" +
+                InstagramAccessibilityService.connected?.rootInActiveWindow?.packageName, failure)
         }
     }
     private fun acquire(): Result<String> {
