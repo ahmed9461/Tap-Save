@@ -2,6 +2,10 @@
 
 ## Product
 
+### Current continuation — 2026-10-01
+
+Owner re-reported failures and authorized connected-phone testing. The S22/Android 16/Instagram 448 Arabic has signed 0.5.0 and all permissions. Owner connected the isolated Instagram session themselves; one real overlay-to-save used it successfully. Repeated Copy acquisitions then returned an old clipboard despite accepting the semantic action. A focused standalone probe with the sheet left open obtained a fresh link; premature sheet dismissal is being repaired and must be tested before declaring reliability restored. Keep the retained signing identity and Plan 0001; never install the fake Instagram fixture on this phone. Candidate 0.5.1/code 6 is not yet a verified delivery.
+
 **Name:** Tap Save  
 **Repository:** `ahmed9461/Tap-Save`  
 **Platform:** Android only.  

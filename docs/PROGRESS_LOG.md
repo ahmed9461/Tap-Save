@@ -1,5 +1,12 @@
 # PROGRESS_LOG
 
+## 2026-10-01 — Connected-phone failure reproduction and repair in progress
+
+- Confirmed S22 SM-S908U1/Android 16, Instagram 448.0.0.52.84 Arabic, signed Tap Save 0.5.0 and overlay/usage/notification/accessibility grants. Owner completed optional Instagram login; credentials/cookies were not inspected. Existing eight app-folder videos were left intact.
+- Extended the separate one-shot ADB probe to use semantic actions and sanitized control metadata. No fake Instagram installation, account reset, coordinate clicks, contact/caption dumps or message sending. Native URL-launch commands were blocked by automatic review; owner opened Instagram, after which scoped inspection and overlay actions worked.
+- Actual floating-button acquisition closed the share sheet, read a fresh focused link and saved `DcIAoWLNkXa` using the optional session. Repeated attempts then reproduced `FRESH_REEL_LINK_MISSING` despite accepted Copy actions. An isolated focused check, leaving the sheet open, read a different fresh Reel (`Dd2CXuwPzsk`) with clipboard commit 538 ms after its copy stage began; production had sent Back about 190 ms after Copy.
+- Implemented capture-before-cleanup with the existing focused activity, a delayed-copy regression and safe per-download strategy/metadata-count/status trace. Candidate 0.5.1/code 6 build, signing, emulator and real-phone retry gates are pending. First diagnostic-only source `f71d7e0` passed the unchanged build/lint/API 29/35/36 suite; that does not validate the new repair.
+
 ## 2026-09-27 — Real public Reel saved through the Android Share pipeline
 
 - Code `03a5d1f`: build/strict lint, 16 JVM + 26 instrumentation tests per API 29/35/36 job passed (CI `36277332969`). Separate live CI `36277332176` saved `DGOSAUyC903` through the real API 36 Share activity/service, verified published video/audio and decoded a frame. No resolver/transport fixture override in that live test.

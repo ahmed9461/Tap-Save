@@ -3,6 +3,13 @@
 **Status:** Active  
 **Started:** 2026-09-26
 
+### 2026-10-01 connected-phone reliability continuation
+
+- Owner's renewed download failures reopen reliability acceptance. S22/Android 16/Instagram 448 Arabic is connected, signed 0.5.0 and permissions verified; owner signed into the optional local session.
+- One actual ↓ → fresh current link → session-backed save succeeded. Repeated attempts reproduced fresh-link rejection after accepted Copy. A standalone focused check succeeded when the share sheet stayed open.
+- Implemented pending verification: move owned-sheet cleanup after the fresh focused read; delayed/cancelled-copy regression; bounded download-stage diagnostics. Candidate 0.5.1/code 6 retains the permanent signing identity and all existing data.
+- Next: full build/lint/regressions, same-key APK update, repeated different real Reels and independent Share, inspect actual saved video/audio and diagnostics, then update evidence. Do not mark the plan complete from a single success.
+
 ### Owner acceptance and 0.5 continuation
 
 - Owner reports the delivered 0.4 works very well with no observed problems. This establishes normal-use acceptance; targeted session, OEM interruption and battery measurements remain separate.

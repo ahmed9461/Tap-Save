@@ -20,9 +20,16 @@ public class FixtureActivity extends Activity {
             LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
             content.setId(com.instagram.android.R.id.direct_external_reshare_row);
             TextView heading = new TextView(this); heading.setText("TEST SHARE SHEET"); content.addView(heading);
-            Runnable copy = () -> {
+            Runnable publish = () -> {
                 if (!getIntent().getBooleanExtra("stale", false)) getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("fixture", "https://www.instagram.com/reel/AdapterFixture/"));
                 if (!getIntent().getBooleanExtra("keepSheet", false)) sheet.dismiss();
+            };
+            Runnable copy = () -> {
+                if (getIntent().getBooleanExtra("asyncCopy", false)) {
+                    // Real Instagram can accept Copy before its clipboard write. Back
+                    // cancels that work; a focused reader must leave the sheet alive.
+                    content.postDelayed(() -> { if (sheet.isShowing()) publish.run(); }, 650);
+                } else publish.run();
             };
             if (getIntent().getBooleanExtra("nested", false)) {
                 LinearLayout tile = new LinearLayout(this);

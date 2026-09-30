@@ -79,28 +79,33 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
         if (stage == Stage.SHARE) {
             openedSheet = true; stage = Stage.COPY; attempts = 0; nextAttempt = 0
             schedule(50)
-        } else beginCleanup(null)
+        } else startHandoff()
     }
     private fun fail(code: String) {
         trace?.add("FAIL stage=$stage code=$code")
-        if (openedSheet && stage != Stage.HANDOFF) beginCleanup(Result.failure(IllegalStateException(code)))
+        if (openedSheet) beginCleanup(Result.failure(IllegalStateException(code)))
         else complete(Result.failure(IllegalStateException(code)))
     }
-    private fun beginCleanup(result: Result<String>?) {
+    private fun beginCleanup(result: Result<String>) {
         main.removeCallbacks(inspect); main.removeCallbacks(timeout)
-        cleanupResult = result; cleanupDeadline = SystemClock.uptimeMillis() + 1_500
+        cleanupResult = result; cleanupDeadline = SystemClock.uptimeMillis() + 2_500
         stage = Stage.CLEANUP
         inspectCleanup()
     }
     private fun inspectCleanup() {
         val root = rootInActiveWindow
+        // The focused reader reports before its Activity finishes. Let it return to
+        // Instagram; never send Back to Tap Save (or to a different foreground app).
+        if (root?.packageName?.toString() == packageName && SystemClock.uptimeMillis() < cleanupDeadline) {
+            schedule(100); return
+        }
         if (root == null && SystemClock.uptimeMillis() < cleanupDeadline) {
             trace?.add("CLEANUP waiting_for_window=true")
             schedule(100); return
         }
         if (root?.packageName?.toString() != InstagramApp.PACKAGE_NAME || getSystemService(KeyguardManager::class.java).isKeyguardLocked) {
             trace?.add("CLEANUP skipped=foreground_changed")
-            if (cleanupResult == null) cleanupResult = Result.failure(IllegalStateException(if (root == null) "WINDOW_NOT_READY" else "INSTAGRAM_LEFT"))
+            if (cleanupResult?.isFailure != true) cleanupResult = Result.failure(IllegalStateException(if (root == null) "WINDOW_NOT_READY" else "INSTAGRAM_LEFT"))
             finishCleanup(); return
         }
         val copyVisible = InstagramNodes.scan(root, InstagramControls.Action.COPY_LINK).matches.isNotEmpty()
@@ -113,22 +118,32 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
         }
         if (SystemClock.uptimeMillis() >= cleanupDeadline) {
             trace?.add("CLEANUP unconfirmed copy_visible=$copyVisible")
-            if (cleanupResult == null) cleanupResult = Result.failure(IllegalStateException("SHARE_SHEET_NOT_CLOSED"))
+            if (cleanupResult?.isFailure != true) cleanupResult = Result.failure(IllegalStateException("SHARE_SHEET_NOT_CLOSED"))
             finishCleanup()
         } else schedule(100)
     }
     private fun finishCleanup() {
         main.removeCallbacks(inspect)
-        cleanupResult?.let { complete(it); return }
+        complete(requireNotNull(cleanupResult))
+    }
+    private fun startHandoff() {
+        main.removeCallbacks(inspect); main.removeCallbacks(timeout)
+        // Copy may complete asynchronously. Keep its sheet alive until the focused
+        // reader confirms a fresh link; closing it immediately can cancel the copy.
         stage = Stage.HANDOFF
         trace?.add("HANDOFF launching_focused_activity"); trace?.flush()
         main.postDelayed(timeout, 3_000)
         try {
             startActivity(Intent(this, ReelLinkCaptureActivity::class.java).putExtra("request", pending?.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (_: RuntimeException) { complete(Result.failure(IllegalStateException("LINK_HANDOFF_FAILED"))) }
+        } catch (_: RuntimeException) { captured(Result.failure(IllegalStateException("LINK_HANDOFF_FAILED"))) }
     }
     fun diagnostic(message: String) { trace?.add(message) }
-    fun finish(result: Result<String>) { complete(result) }
+    fun captureActive(requestId: String?) = pending?.id == requestId && stage == Stage.HANDOFF
+    fun captured(result: Result<String>) {
+        if (pending == null || stage != Stage.HANDOFF) return
+        trace?.add("HANDOFF captured=${result.isSuccess}")
+        beginCleanup(result)
+    }
     private fun complete(result: Result<String>) {
         trace?.add("END result=${if (result.isSuccess) "acquired" else result.exceptionOrNull()?.message}"); trace?.flush()
         val callback = pending?.completed

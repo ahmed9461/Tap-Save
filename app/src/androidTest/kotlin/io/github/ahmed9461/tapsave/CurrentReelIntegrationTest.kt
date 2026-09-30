@@ -134,6 +134,16 @@ class CurrentReelIntegrationTest {
         assertTrue(report, Regex("ACTION COPY_LINK parent=[1-7] id=16 accepted=true").containsMatchIn(report))
         assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
     }
+    @Test fun asynchronousCopyCommitsBeforeTheOwnedShareSheetIsClosed() {
+        launch("--ez asyncCopy true --ez keepSheet true --ez nested true --ez decorative true")
+        assertEquals("https://www.instagram.com/reel/AdapterFixture/", acquire().getOrThrow())
+        val report = AcquisitionDiagnostics.read(context)
+        assertTrue(report, report.contains("CLIPBOARD fresh_reel=true"))
+        assertTrue(report, report.indexOf("CLIPBOARD fresh_reel=true") < report.indexOf("CLEANUP back_accepted=true"))
+        assertTrue(report, report.contains("CLEANUP reel_ready=true"))
+        waitForSave { automation.rootInActiveWindow?.findAccessibilityNodeInfosByText("TEST FIXTURE")?.isNotEmpty() == true }
+        assertNull(InstagramAccessibilityService.pending)
+    }
     @Test fun ambiguityFailsWithoutGuessingAndOtherAppsAreRejected() {
         launch("--ez ambiguous true")
         assertEquals("SHARE_CONTROL_NOT_UNIQUE", acquire().exceptionOrNull()?.message)

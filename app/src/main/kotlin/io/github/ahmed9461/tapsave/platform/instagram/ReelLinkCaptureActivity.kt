@@ -24,11 +24,11 @@ class ReelLinkCaptureActivity : Activity() {
     }
     private fun readFreshLink() {
         val request = InstagramAccessibilityService.pending
-        if (request == null || request.id != intent.getStringExtra("request") || !hasWindowFocus()) { finish(); return }
+        if (request == null || InstagramAccessibilityService.connected?.captureActive(intent.getStringExtra("request")) != true || !hasWindowFocus()) { finish(); return }
         val clipboard = getSystemService(ClipboardManager::class.java)
         val clip = try { clipboard.primaryClip } catch (_: SecurityException) {
             InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD denied=true")
-            InstagramAccessibilityService.connected?.finish(Result.failure(IllegalStateException("CLIPBOARD_ACCESS_DENIED")))
+            InstagramAccessibilityService.connected?.captured(Result.failure(IllegalStateException("CLIPBOARD_ACCESS_DENIED")))
             finish(); return
         }
         val timestamp = clip?.description?.timestamp ?: 0
@@ -42,15 +42,15 @@ class ReelLinkCaptureActivity : Activity() {
                 is ShareResult.RedirectLink -> result.canonicalUrl
                 else -> null
             }
-            if (url != null) { InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD fresh_reel=true"); InstagramAccessibilityService.connected?.finish(Result.success(url)); finish(); return }
+            if (url != null) { InstagramAccessibilityService.connected?.diagnostic("CLIPBOARD fresh_reel=true"); InstagramAccessibilityService.connected?.captured(Result.success(url)); finish(); return }
         }
         if (++attempts < 20) main.postDelayed({ readFreshLink() }, 100)
-        else { InstagramAccessibilityService.connected?.finish(Result.failure(IllegalStateException("FRESH_REEL_LINK_MISSING"))); finish() }
+        else { InstagramAccessibilityService.connected?.captured(Result.failure(IllegalStateException("FRESH_REEL_LINK_MISSING"))); finish() }
     }
     override fun onDestroy() {
         main.removeCallbacksAndMessages(null)
         if (InstagramAccessibilityService.pending?.id == intent.getStringExtra("request")) {
-            InstagramAccessibilityService.connected?.finish(Result.failure(IllegalStateException("LINK_HANDOFF_CLOSED")))
+            InstagramAccessibilityService.connected?.captured(Result.failure(IllegalStateException("LINK_HANDOFF_CLOSED")))
         }
         super.onDestroy()
     }

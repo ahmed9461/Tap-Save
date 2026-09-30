@@ -2,7 +2,11 @@
 
 ## Current state
 
-**Status:** Owner accepted normal 0.4 use with no observed problems. Version 0.5 adds verified Arabic/RTL and a persistent signed personal release; same-key update/data-retention gate passed.
+**Status:** 2026-10-01 reliability repair in progress after renewed owner failure reports. Connected S22 has signed 0.5.0, all required permissions and a newly owner-connected local Instagram session. Earlier normal-use acceptance does not close this regression.
+
+- Real floating-button acquisition and a session-backed save of `DcIAoWLNkXa` succeeded on the phone. Subsequent attempts reproduced `FRESH_REEL_LINK_MISSING` after accepted Copy actions.
+- A separate focused diagnostic, leaving the share sheet open, observed a fresh different Reel link 538 ms after the copy probe started. The production sequence had sent Back about 190 ms after its Copy action. A repair now waits for a fresh focused clipboard result before closing its owned sheet; automated/signed/phone validation is pending.
+- Candidate 0.5.1/code 6 adds bounded structural download diagnostics. No passwords, session cookies, response bodies or signed media URLs are logged. Existing owner media and app data are preserved. No new production dependency.
 
 **Active plan:** `plans/0001-foundation-and-instagram-spike.md`
 
