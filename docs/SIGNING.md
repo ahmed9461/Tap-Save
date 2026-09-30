@@ -26,4 +26,6 @@ Sources: [Android signing and update identity](https://developer.android.com/stu
 
 ## Verified update gate
 
+**Owner-device update, 2026-10-01:** Signed 0.5.1/code 6 at `edb902f` was installed over the owner's signed 0.5.0/code 5 using `adb install -r`. Retained certificate matched; Arabic/setup/permissions and the newly connected local session still worked, and original media rows/metadata were unchanged. No uninstall, key rotation or reset. Signed CI `36789479757` independently passed both API 36 code 5 → 6 phases with exact media-byte retention. This does not change the historical 0.4-key limitation above.
+
 Source `902ceae1fe65822958191c3732a88a368c3864bc` passed [signed CI 36443689015](https://github.com/ahmed9461/Tap-Save/actions/runs/36443689015). Both seed and verify phases passed on API 36; app preferences and exact app-owned video bytes survived version 4 → 5 replacement. The delivered certificate is `c047a8350f478a6dd72b4000b40a958dac992cbbeb3294a17e8a12bf0ed521ae`. Private backup load and public certificate match were also checked locally. The one-time old-debug-key transition described above is not covered by this same-key proof.

@@ -3,12 +3,12 @@
 **Status:** Active  
 **Started:** 2026-09-26
 
-### 2026-10-01 connected-phone reliability continuation
+### 2026-10-01 connected-phone reliability milestone verified
 
-- Owner's renewed download failures reopen reliability acceptance. S22/Android 16/Instagram 448 Arabic is connected, signed 0.5.0 and permissions verified; owner signed into the optional local session.
-- One actual ↓ → fresh current link → session-backed save succeeded. Repeated attempts reproduced fresh-link rejection after accepted Copy. A standalone focused check succeeded when the share sheet stayed open.
-- Implemented pending verification: move owned-sheet cleanup after the fresh focused read; delayed/cancelled-copy regression; bounded download-stage diagnostics. Candidate 0.5.1/code 6 retains the permanent signing identity and all existing data.
-- Next: full build/lint/regressions, same-key APK update, repeated different real Reels and independent Share, inspect actual saved video/audio and diagnostics, then update evidence. Do not mark the plan complete from a single success.
+- Reproduced stale clipboard after accepted Copy on the actual S22/Android 16/Instagram 448 Arabic. Repaired capture/cleanup ordering without coordinates or background clipboard reads; added delayed-copy and safe diagnostic regressions. Retained native resolver/signing identity; no new production dependency.
+- Signed 0.5.1/code 6 installed in place. Six different controlled phone saves passed: four successive direct taps, native Instagram Share, and cancel/Retry. One resolved publicly; five used the owner's local session. Every matching MediaStore file passed 720×1280 H.264/non-silent AAC and full decoding. Dedup, resolution-stage cancellation cleanup and session/settings/old-media preservation passed; temporary probe removed.
+- Shipping source `edb902f`: full API 29/35/36 build/lint, 19 JVM + 48 instrumentation tests each, three separate anonymous live Share saves and signed update/data retention passed. Test-only follow-up `23c384c` also passed the complete matrix (`36791713644`) and signed update (`36791751852`); phone APK unchanged.
+- Still open: OEM interruption/force-stop, storage/network pressure, battery, broader Instagram changes and actual-account clear. Preserve the owner's session unless they request disconnect. Keep Plan 0001 active; no new plan.
 
 ### Owner acceptance and 0.5 continuation
 
@@ -70,7 +70,9 @@ Instagram Share → Tap Save reaches a normalized target reliably.
 
 ## Step 4 — Current Reel identification research
 
-**Progress:** Compared native APIs and privacy/coupling tradeoffs in `docs/TECHNICAL_SPIKE.md`. Explicit Share is the baseline; usage events give package context only. An opt-in Instagram-only semantic Share → Copy link adapter is implemented after owner authorization. It is bounded, inactive between taps, has Arabic/English labels, and uses a focused fresh-clipboard handoff. Version 0.4 reproduces the actual Instagram 448 Arabic decorative-image rejection and selects the supported containing tile (D-017). The actual floating-button-to-MediaStore path, English/Arabic, nested/rejected actions and cleanup passed controlled API 29/35/36 tests at `e8fbf58`. Complete new-app Samsung clipboard/save and successive-Reel acceptance remain open.
+**0.5.1 update:** Actual Samsung focused clipboard acquisition, automatic sheet restoration and successive-Reel save acceptance passed. D-019 supersedes the earlier close-before-read ordering. Historical 0.4 limits below no longer describe current phone acceptance.
+
+**Status: Strategy selected and target-device path verified.** Native API/privacy comparison is in `docs/TECHNICAL_SPIKE.md`. Usage events provide app context only; independent Share remains the fallback. The authorized opt-in Instagram-only semantic adapter is bounded and inactive between taps, handles Arabic/English supported control ancestors and uses focused fresh-clipboard capture. D-017 covers actual rejected decorative-image clicks; D-019 covers asynchronous Copy and sheet lifetime. English/Arabic mechanics and failures pass API 29/35/36; actual Arabic Instagram successive-Reel saves pass on the S22.
 
 Test approaches in order from least invasive to most invasive.
 
@@ -91,6 +93,8 @@ Do not lock AccessibilityService into the main architecture merely because it ca
 Choose a primary strategy plus fallback strategy and record the choice in `docs/DECISIONS.md`.
 
 ## Step 5 — Media resolution/download spike
+
+**0.5.1 update:** Six controlled real-phone saves verified public/session paths and full video/audio decoding. Anonymous live CI again passed all three public test inputs at `edb902f`. Broader Instagram compatibility and actual-account clear remain separate gates.
 
 **Status: Development-build exit met; owner reports some phone saves, broader reliability remains open.** At `03a5d1f`, the real Share activity/service resolved `DGOSAUyC903`, downloaded it anonymously and published a playable video/audio file on API 36 (live CI `36277332176`). The test verified metadata and decoded a frame. Native public-page/embed parsing required support for JSON strings inside ServerJS wrappers; no JavaScript runtime or heavy engine was needed (D-014). This proved one public sample, not broad compatibility. The owner subsequently confirmed some public Reel saves and requested reliability/direct-current-Reel work; that continuation is authorized. Version 0.3 adds public page/embed/post-permalink strategies, optional session fallback, variant selection, short-link normalization and specific diagnostics (D-016). At `411ee70`, live API 36 CI `36354557958` saved three public Reels anonymously with video/audio and frame verification; authenticated-account acceptance remains open.
 
@@ -115,6 +119,8 @@ At least the Share flow can resolve one supported Reel and save it locally in a 
 
 ## Step 6 — Storage and job lifecycle
 
+**0.5.1 update:** Actual Samsung MediaStore files, resolution-stage cancellation/Retry, dedup and original-media preservation passed. Explicit pending-media query was empty. Controlled tests cover mid-transfer rollback; phone force-stop, storage/network pressure and gallery UX remain open.
+
 **Progress:** One user-started dataSync transfer service, progress/cancellation, activity-independent execution, a single-job checkpoint, app-owned pending cleanup and published-target deduplication. API 29/35/36 tests passed exact HTTP-to-MediaStore bytes, interrupted/truncated input, blocked-read cancellation, recreation/closing the Share activity, deduplication and pending-row reconciliation. Live API 36 Reel saving also passed. Samsung gallery/playback, actual force-stop and storage/network pressure acceptance remain open.
 
 - Save through modern Android storage APIs.
@@ -130,7 +136,9 @@ A requested download is robust across ordinary activity lifecycle changes and ap
 
 ## Step 7 — Review
 
-**Progress:** Reviewed the native resolver, service, storage transaction, cleanup assertions, dependency graph, failure UX and rendered actual UI. Final 0.4 application/test code at `e8fbf58` passed build/strict lint, 19 JVM tests and 44 instrumentation tests per API 29/35/36 job (CI `36422892820`). Three separate live public-Reel save tests passed on API 36 at `3e5f0e5` (CI `36419880160`); subsequent changes only affect system bars, capture and CI. No production dependency added. Complete Samsung acquisition/save, real account session, OEM lifecycle and battery measurements remain outstanding. Plan stays active; no new plan created.
+**0.5.1 update:** Reviewed the production diff and retained the native dependency graph. Shipping-source build/lint, API matrix, three live anonymous saves, same-key update and six real-phone samples passed. OEM lifecycle/battery remain open; final test-harness follow-up is recorded in PROJECT_STATUS.
+
+**Progress:** Reviewed native resolution, service/storage transactions, cleanup, dependencies, actual UI and failure recovery. Current matrix, anonymous live-network and owner-device evidence are recorded above and in `PROJECT_STATUS.md`; earlier build milestones remain in `docs/TECHNICAL_SPIKE.md`. No production dependency added. OEM lifecycle/battery and the remaining gates listed above keep the plan active; no new plan.
 
 Before closing this plan:
 
