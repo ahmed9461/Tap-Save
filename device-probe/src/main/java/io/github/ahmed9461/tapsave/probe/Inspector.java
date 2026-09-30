@@ -84,6 +84,7 @@ public class Inspector extends Instrumentation {
                     for (int depth = 0; n != null && depth < 8; depth++, n = n.getParent()) report.append("parent=").append(depth).append(' ').append(properties(n)).append('\n');
                 }
                 if ("compareCopy".equals(arguments.getString("operation"))) {
+                    getContext().getSharedPreferences("copy-probe", 0).edit().putLong("after", System.currentTimeMillis()).commit();
                     List<AccessibilityNodeInfo> images = new ArrayList<>();
                     for (AccessibilityNodeInfo n : matches) if ("com.instagram.android:id/button".equals(n.getViewIdResourceName())) images.add(n);
                     if (images.size() == 1) {
@@ -132,6 +133,7 @@ public class Inspector extends Instrumentation {
                 if (operation.equals("device:click") && own && (arguments.getString("label", "").equals(text) || arguments.getString("label", "").equals(desc))) matches.add(n);
                 if (operation.equals("device:scroll") && arguments.getString("id", "").equals(id) && scroll) matches.add(n);
                 if (operation.equals("device:scrollApp") && own && scroll) matches.add(n);
+                if (operation.equals("device:toggleApp") && own && n.isCheckable()) matches.add(n);
                 if (operation.equals("device:inspect")) {
                     if (own || click || scroll || id.contains("clips") || copy(n)) {
                         report.append(properties(n));
@@ -149,9 +151,11 @@ public class Inspector extends Instrumentation {
             if (matches.size() == 1) {
                 AccessibilityNodeInfo n = matches.get(0);
                 int action = operation.startsWith("device:scroll") ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD : AccessibilityNodeInfo.ACTION_CLICK;
+                if (operation.equals("device:scroll") && "page".equals(arguments.getString("mode"))) action = AccessibilityNodeInfo.AccessibilityAction.ACTION_PAGE_DOWN.getId();
+                final int selectedAction = action;
                 for (int depth = 0; n != null && depth < 8; depth++, n = n.getParent()) {
                     if (!n.refresh() || !n.isVisibleToUser() || !n.isEnabled()) continue;
-                    if (n.getActionList().stream().anyMatch(a -> a.getId() == action)) {
+                    if (n.getActionList().stream().anyMatch(a -> a.getId() == selectedAction)) {
                         report.append("parent=").append(depth).append(" action=").append(action).append(" accepted=").append(n.performAction(action)).append('\n'); break;
                     }
                 }
