@@ -141,7 +141,9 @@ public class Inspector extends Instrumentation {
                 if (operation.equals("device:scrollApp") && own && scroll) matches.add(n);
                 if (operation.equals("device:toggleApp") && own && n.isCheckable()) matches.add(n);
                 if (operation.equals("device:shareTarget") && chooser && "Tap Save".equals(text)) matches.add(n);
-                if (operation.equals("device:clickExternal") && (arguments.getString("label", "").equals(text) || arguments.getString("label", "").equals(desc))) matches.add(n);
+                // The row exposes both an image description and its TextView label.
+                // Select the observed label once, then dispatch to its supported parent.
+                if (operation.equals("device:clickExternal") && arguments.getString("label", "").equals(text)) matches.add(n);
                 if (operation.equals("device:external")) report.append(properties(n)).append(" text=").append(text).append(" description=").append(desc).append('\n');
                 if (operation.equals("device:inspect")) {
                     if (own || click || scroll || id.contains("clips") || copy(n)) {
