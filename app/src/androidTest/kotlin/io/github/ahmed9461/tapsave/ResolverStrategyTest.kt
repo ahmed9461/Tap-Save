@@ -18,6 +18,21 @@ class ResolverStrategyTest {
             assertFalse(it.headers.single().containsKey("cookie"))
         }
     }
+    @Test fun resolutionTraceExplainsFallbackWithoutExportingSessionOrPageContents() {
+        val trace = mutableListOf<String>()
+        var requests = 0
+        HttpFixture { HttpFixture.Reply("text/html", (if (++requests == 4) publicEmbed("Strategy") else "<html>private-page-text</html>").toByteArray()) }.use {
+            val result = InstagramPublicResolver(it.http, trace::add) { "sessionid=synthetic_fixture" }.resolve(target, TransferCancellation())
+            assertEquals("session-page", result.strategy)
+            assertTrue(trace.contains("MISSING stage=public-page"))
+            assertTrue(trace.contains("MISSING stage=public-embed"))
+            assertTrue(trace.contains("MISSING stage=public-post"))
+            assertTrue(trace.contains("SESSION available=true"))
+            assertTrue(trace.any { line -> line.startsWith("RESOLVED stage=session-page") })
+            val report = trace.joinToString("\n")
+            for (sensitive in listOf("Strategy", "sessionid", "synthetic_fixture", "private-page-text", "https://")) assertFalse(report, report.contains(sensitive))
+        }
+    }
     @Test fun publicFailuresThenSessionUseBoundedOrderedChain() {
         var requests = 0
         HttpFixture { HttpFixture.Reply("text/html", (if (++requests == 4) publicEmbed("Strategy") else "<html>shell</html>").toByteArray()) }.use {

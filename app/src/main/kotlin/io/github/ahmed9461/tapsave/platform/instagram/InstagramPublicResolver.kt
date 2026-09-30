@@ -18,6 +18,7 @@ fun interface ReelResolver { fun resolve(target: SharedTarget, cancellation: Tra
 /** Public documents first, then the same documents with the explicitly enabled local session. */
 class InstagramPublicResolver(
     private val http: HttpTransfer,
+    private val diagnostic: (String) -> Unit = {},
     private val sessionCookie: () -> String? = { null },
 ) : ReelResolver {
     override fun resolve(target: SharedTarget, cancellation: TransferCancellation): ResolvedVideo {
@@ -28,13 +29,20 @@ class InstagramPublicResolver(
             for ((url, name) in listOf(target.canonicalUrl to "page", "${target.canonicalUrl}embed/" to "embed", "https://www.instagram.com/p/$code" to "post")) {
                 cancellation.check()
                 val stage = (if (session) "session-" else "public-") + name
+                diagnostic("RESOLVE stage=$stage")
                 try {
                     val (_, page) = http.page(url, cancellation, cookie)
-                    PublicReelMetadata.parse(page, code)?.let { return it.copy(strategy = stage) }
+                    diagnostic("DOCUMENT stage=$stage chars=${page.length} media_fields=${Regex("video_url|video_versions|og:video").findAll(page).count()}")
+                    PublicReelMetadata.parse(page, code)?.let {
+                        diagnostic("RESOLVED stage=$stage pixels=${it.pixels} audio=${it.expectsAudio}")
+                        return it.copy(strategy = stage)
+                    }
+                    diagnostic("MISSING stage=$stage")
                     last = SaveFailure(SaveFailure.Reason.METADATA_UNAVAILABLE, stage)
                 } catch (failure: SaveFailure) {
                     val reason = if (failure.reason == SaveFailure.Reason.UNSUPPORTED) SaveFailure.Reason.EXTRACTOR_INCOMPATIBLE else failure.reason
                     last = SaveFailure(reason, stage, failure.status)
+                    diagnostic("FAIL stage=$stage reason=$reason http=${failure.status ?: 0}")
                     if (reason == SaveFailure.Reason.AUTH_REQUIRED) authFailure = last
                     if (reason in setOf(SaveFailure.Reason.RATE_LIMITED, SaveFailure.Reason.RESTRICTED, SaveFailure.Reason.NETWORK, SaveFailure.Reason.TOO_LARGE)) throw last
                 }
@@ -43,7 +51,9 @@ class InstagramPublicResolver(
         }
         attempt(null, false)?.let { return it }
         cancellation.check()
-        sessionCookie()?.let { cookie -> attempt(cookie, true)?.let { return it } }
+        val cookie = sessionCookie()
+        diagnostic("SESSION available=${cookie != null}")
+        cookie?.let { attempt(it, true)?.let { video -> return video } }
         throw authFailure ?: last
     }
 }

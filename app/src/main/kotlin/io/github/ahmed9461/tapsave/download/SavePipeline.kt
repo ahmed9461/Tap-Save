@@ -19,16 +19,19 @@ fun interface SaveRunner {
 class SavePipeline(
     private val context: Context,
     private val http: HttpTransfer = HttpTransfer(),
-    private val resolver: ReelResolver = InstagramPublicResolver(http) { io.github.ahmed9461.tapsave.session.InstagramSession.cookies(context) },
+    private val resolver: ReelResolver? = null,
     private val onResolved: (String) -> Unit = {},
+    private val diagnostic: (String) -> Unit = {},
 ) : SaveRunner {
     override fun save(target: SharedTarget, cancellation: TransferCancellation, progress: (Long, Long?) -> Unit): Uri {
+        val activeResolver = resolver ?: InstagramPublicResolver(http, diagnostic) { io.github.ahmed9461.tapsave.session.InstagramSession.cookies(context) }
         repeat(2) { attempt ->
-            val video = resolver.resolve(target, cancellation)
+            val video = activeResolver.resolve(target, cancellation)
             cancellation.check()
             onResolved(video.strategy)
             try {
                 return http.get(video.url, NetworkPolicy::media, cancellation, media = true).use { response ->
+                    diagnostic("TRANSFER attempt=${attempt + 1} bytes=${response.length ?: -1}")
                     if (response.type !in setOf("video/mp4", "application/octet-stream")) throw SaveFailure(SaveFailure.Reason.EXTRACTOR_INCOMPATIBLE, "media")
                     if ((response.length ?: 0) > MediaStoreVideoWriter.MAX_BYTES) throw SaveFailure(SaveFailure.Reason.TOO_LARGE, "media")
                     progress(0, response.length)
@@ -41,6 +44,7 @@ class SavePipeline(
             } catch (failure: SaveFailure) {
                 cancellation.check()
                 if (failure.reason != SaveFailure.Reason.EXPIRED_URL || attempt == 1) throw SaveFailure(failure.reason, "media", failure.status)
+                diagnostic("REFRESH reason=EXPIRED_URL")
                 // Only an expired CDN URL gets one fresh resolution. Never retry a rate limit/restriction.
             }
         }

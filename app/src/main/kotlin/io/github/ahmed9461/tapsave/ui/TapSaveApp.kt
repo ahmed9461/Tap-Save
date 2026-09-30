@@ -62,7 +62,7 @@ fun TapSaveApp(
     var advanced by rememberSaveable { mutableStateOf(false) }
     fun diagnostics(): String {
         val state = SaveUiState.current ?: SaveJournal(context).read()
-        return AcquisitionDiagnostics.read(context) + "\n\n" + resources.getString(R.string.latest_download_diagnostic, listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · "))
+        return AcquisitionDiagnostics.read(context) + "\n\n" + resources.getString(R.string.latest_download_diagnostic, listOfNotNull(state?.phase?.name, state?.failure?.name, state?.diagnostic).joinToString(" · ")) + "\n" + DownloadDiagnostics.read(context)
     }
     var report by remember(resources) { mutableStateOf(diagnostics()) }
     val missing = SetupPermission.entries.filterNot { it in permissions }
@@ -186,7 +186,7 @@ fun TapSaveApp(
                                 SelectionContainer { Text(report, style = MaterialTheme.typography.bodySmall) }
                                 Row {
                                     TextButton(onClick = { context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(resources.getString(R.string.diagnostics), report)) }) { Text(stringResource(R.string.copy_report)) }
-                                    TextButton(onClick = { AcquisitionDiagnostics.clear(context); report = AcquisitionDiagnostics.read(context) }) { Text(stringResource(R.string.clear)) }
+                                    TextButton(onClick = { AcquisitionDiagnostics.clear(context); DownloadDiagnostics.clear(context); report = diagnostics() }) { Text(stringResource(R.string.clear)) }
                                 }
                             }
                         }

@@ -62,6 +62,7 @@ class SaveService : Service() {
         }
         main.postDelayed(deadline, 10 * 60 * 1000L)
         executor.execute { synchronized(jobLock) {
+            val trace = DownloadDiagnostics(this)
             var resolved = initial
             val finished = try {
                 // No automatic resume: clean only the previous interrupted target before this explicit request.
@@ -71,7 +72,8 @@ class SaveService : Service() {
                 journal.write(resolved)
                 signal.check()
                 val existing = reconcileMedia(this, target)
-                val uri = existing ?: (testFactory?.invoke(this) ?: SavePipeline(this, onResolved = { strategy -> resolved = resolved.copy(diagnostic = strategy) })).save(target, signal) { bytes, total ->
+                if (existing != null) trace.add("ALREADY_SAVED")
+                val uri = existing ?: (testFactory?.invoke(this) ?: SavePipeline(this, onResolved = { strategy -> resolved = resolved.copy(diagnostic = strategy) }, diagnostic = trace::add)).save(target, signal) { bytes, total ->
                     signal.check()
                     val now = SystemClock.elapsedRealtime()
                     if (bytes == 0L || now - lastProgressTime >= 200) {
@@ -100,6 +102,7 @@ class SaveService : Service() {
                 try { signal.check(); resolved.copy(phase = SavePhase.FAILED, failure = reason, diagnostic = if (failure is SaveFailure) listOfNotNull(failure.stage.takeIf { it.isNotEmpty() }, failure.status?.let { "HTTP $it" }).joinToString(" · ") else null) }
                 catch (_: CancellationException) { resolved.copy(phase = SavePhase.CANCELLED) }
             }
+            trace.add("END phase=${finished.phase} reason=${finished.failure ?: "none"} stage=${finished.diagnostic.orEmpty()}")
             try { journal.write(finished) } catch (_: IOException) { /* MediaStore remains authoritative for completed files. */ }
             main.post {
                 if (!destroyed) {
