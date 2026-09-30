@@ -115,10 +115,16 @@ public class Inspector extends Instrumentation {
             AccessibilityNodeInfo root = window.getRoot();
             if (root == null) continue;
             String pkg = String.valueOf(root.getPackageName());
-            if (!pkg.equals(app) && !pkg.equals("com.instagram.android")) continue;
+            boolean chooser = operation.equals("device:shareTarget") && (pkg.equals("android") || pkg.equals("com.android.intentresolver"));
+            if (!pkg.equals(app) && !pkg.equals("com.instagram.android") && !chooser) continue;
             report.append("window package=").append(pkg).append(" type=").append(window.getType())
                 .append(" focused=").append(window.isFocused()).append('\n');
             ArrayDeque<AccessibilityNodeInfo> queue = new ArrayDeque<>(); queue.add(root);
+            boolean external = operation.equals("device:external") || operation.equals("device:clickExternal");
+            if (external) {
+                queue.clear();
+                if (pkg.equals("com.instagram.android")) queue.addAll(root.findAccessibilityNodeInfosByViewId("com.instagram.android:id/direct_external_reshare_row"));
+            }
             int count = 0;
             while (!queue.isEmpty() && count++ < 500) {
                 AccessibilityNodeInfo n = queue.removeFirst();
@@ -134,6 +140,9 @@ public class Inspector extends Instrumentation {
                 if (operation.equals("device:scroll") && arguments.getString("id", "").equals(id) && scroll) matches.add(n);
                 if (operation.equals("device:scrollApp") && own && scroll) matches.add(n);
                 if (operation.equals("device:toggleApp") && own && n.isCheckable()) matches.add(n);
+                if (operation.equals("device:shareTarget") && chooser && "Tap Save".equals(text)) matches.add(n);
+                if (operation.equals("device:clickExternal") && (arguments.getString("label", "").equals(text) || arguments.getString("label", "").equals(desc))) matches.add(n);
+                if (operation.equals("device:external")) report.append(properties(n)).append(" text=").append(text).append(" description=").append(desc).append('\n');
                 if (operation.equals("device:inspect")) {
                     if (own || click || scroll || id.contains("clips") || copy(n)) {
                         report.append(properties(n));
@@ -146,7 +155,7 @@ public class Inspector extends Instrumentation {
                 }
             }
         }
-        if (!operation.equals("device:inspect")) {
+        if (!operation.equals("device:inspect") && !operation.equals("device:external")) {
             report.append("matches=").append(matches.size()).append('\n');
             if (matches.size() == 1) {
                 AccessibilityNodeInfo n = matches.get(0);
