@@ -46,7 +46,12 @@ public class Inspector extends Instrumentation {
             UiAutomation ui = getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES);
             android.accessibilityservice.AccessibilityServiceInfo info = ui.getServiceInfo();
             info.flags |= android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
+            info.flags |= android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
             ui.setServiceInfo(info);
+            if (arguments.getString("operation", "").startsWith("device:")) {
+                inspectDevice(ui, report);
+                result.putString("report", report.toString()); finish(0, result); return;
+            }
             AccessibilityNodeInfo root = ui.getRootInActiveWindow();
             if (root == null || !"com.instagram.android".contentEquals(root.getPackageName())) {
                 report.append("Instagram is not the active window; no tree read.");
@@ -97,5 +102,60 @@ public class Inspector extends Instrumentation {
             }
         } catch (Exception e) { report.append("inspection_failed=").append(e.getClass().getSimpleName()); }
         result.putString("report", report.toString()); finish(0, result);
+    }
+
+    // Explicit one-shot owner-device control only. Never reads login WebViews, captions,
+    // contacts, clipboard or private app files; Instagram nodes expose structural metadata.
+    private void inspectDevice(UiAutomation ui, StringBuilder report) {
+        String operation = arguments.getString("operation", "device:inspect");
+        String app = "io.github.ahmed9461.tapsave";
+        List<AccessibilityNodeInfo> matches = new ArrayList<>();
+        for (android.view.accessibility.AccessibilityWindowInfo window : ui.getWindows()) {
+            AccessibilityNodeInfo root = window.getRoot();
+            if (root == null) continue;
+            String pkg = String.valueOf(root.getPackageName());
+            if (!pkg.equals(app) && !pkg.equals("com.instagram.android")) continue;
+            report.append("window package=").append(pkg).append(" type=").append(window.getType())
+                .append(" focused=").append(window.isFocused()).append('\n');
+            ArrayDeque<AccessibilityNodeInfo> queue = new ArrayDeque<>(); queue.add(root);
+            int count = 0;
+            while (!queue.isEmpty() && count++ < 500) {
+                AccessibilityNodeInfo n = queue.removeFirst();
+                if (!n.isVisibleToUser() || "android.webkit.WebView".contentEquals(n.getClassName())) continue;
+                boolean own = app.contentEquals(n.getPackageName());
+                String id = String.valueOf(n.getViewIdResourceName());
+                String text = String.valueOf(n.getText());
+                String desc = String.valueOf(n.getContentDescription());
+                boolean click = n.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK);
+                boolean scroll = n.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD);
+                if (operation.equals("device:overlay") && own && window.getType() == android.view.accessibility.AccessibilityWindowInfo.TYPE_SYSTEM && click) matches.add(n);
+                if (operation.equals("device:click") && own && (arguments.getString("label", "").equals(text) || arguments.getString("label", "").equals(desc))) matches.add(n);
+                if (operation.equals("device:scroll") && arguments.getString("id", "").equals(id) && scroll) matches.add(n);
+                if (operation.equals("device:scrollApp") && own && scroll) matches.add(n);
+                if (operation.equals("device:inspect")) {
+                    if (own || click || scroll || id.contains("clips") || copy(n)) {
+                        report.append(properties(n));
+                        if (own) report.append(" text=").append(text).append(" description=").append(desc);
+                        report.append('\n');
+                    }
+                }
+                for (int i = 0; i < n.getChildCount() && i < 500; i++) {
+                    AccessibilityNodeInfo child = n.getChild(i); if (child != null) queue.addLast(child);
+                }
+            }
+        }
+        if (!operation.equals("device:inspect")) {
+            report.append("matches=").append(matches.size()).append('\n');
+            if (matches.size() == 1) {
+                AccessibilityNodeInfo n = matches.get(0);
+                int action = operation.startsWith("device:scroll") ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD : AccessibilityNodeInfo.ACTION_CLICK;
+                for (int depth = 0; n != null && depth < 8; depth++, n = n.getParent()) {
+                    if (!n.refresh() || !n.isVisibleToUser() || !n.isEnabled()) continue;
+                    if (n.getActionList().stream().anyMatch(a -> a.getId() == action)) {
+                        report.append("parent=").append(depth).append(" action=").append(action).append(" accepted=").append(n.performAction(action)).append('\n'); break;
+                    }
+                }
+            }
+        }
     }
 }
