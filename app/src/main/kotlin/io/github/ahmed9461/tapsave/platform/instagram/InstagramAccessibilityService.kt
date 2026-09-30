@@ -22,6 +22,7 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
     private var observedCopy = false
     private var cleanupBackSent = false
     private var cleanupResult: Result<String>? = null
+    private var capturedResult: Result<String>? = null
     private var cleanupDeadline = 0L
     private val inspect = Runnable { inspectStage() }
     private val timeout = Runnable { fail(if (stage == Stage.COPY && attempts > 0) "COPY_ACTION_FAILED" else "ACQUIRE_TIMEOUT") }
@@ -38,6 +39,7 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
         trace = AcquisitionDiagnostics(this)
         pending = Request(UUID.randomUUID().toString(), completed = completed)
         stage = Stage.SHARE; attempts = 0; nextAttempt = 0; openedSheet = false; observedCopy = false; cleanupBackSent = false
+        capturedResult = null
         main.postDelayed(timeout, 12_000)
         inspectStage()
     }
@@ -135,14 +137,19 @@ class InstagramAccessibilityService : AccessibilityService(), CurrentReelAcquire
         main.postDelayed(timeout, 3_000)
         try {
             startActivity(Intent(this, ReelLinkCaptureActivity::class.java).putExtra("request", pending?.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (_: RuntimeException) { captured(Result.failure(IllegalStateException("LINK_HANDOFF_FAILED"))) }
+        } catch (_: RuntimeException) { beginCleanup(Result.failure(IllegalStateException("LINK_HANDOFF_FAILED"))) }
     }
     fun diagnostic(message: String) { trace?.add(message) }
     fun captureActive(requestId: String?) = pending?.id == requestId && stage == Stage.HANDOFF
     fun captured(result: Result<String>) {
         if (pending == null || stage != Stage.HANDOFF) return
         trace?.add("HANDOFF captured=${result.isSuccess}")
-        beginCleanup(result)
+        capturedResult = result
+    }
+    fun captureClosed(requestId: String?) {
+        if (!captureActive(requestId)) return
+        // Do not Back while the focused reader is still handling its result.
+        beginCleanup(capturedResult ?: Result.failure(IllegalStateException("LINK_HANDOFF_CLOSED")))
     }
     private fun complete(result: Result<String>) {
         trace?.add("END result=${if (result.isSuccess) "acquired" else result.exceptionOrNull()?.message}"); trace?.flush()

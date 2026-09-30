@@ -49,9 +49,7 @@ class ReelLinkCaptureActivity : Activity() {
     }
     override fun onDestroy() {
         main.removeCallbacksAndMessages(null)
-        if (InstagramAccessibilityService.pending?.id == intent.getStringExtra("request")) {
-            InstagramAccessibilityService.connected?.captured(Result.failure(IllegalStateException("LINK_HANDOFF_CLOSED")))
-        }
+        InstagramAccessibilityService.connected?.captureClosed(intent.getStringExtra("request"))
         super.onDestroy()
     }
 }
